@@ -1586,6 +1586,65 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-rest { flex: none; margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--ex-line-200); display: flex; align-items: baseline; gap: 28px; }
 .fd-rest b { flex: none; font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
 .fd-rest span { font-size: 28px; color: var(--ex-slate-500); letter-spacing: -.015em; word-break: keep-all; }
+
+/* ── 이름의 뜻 ── */
+.fd-name .body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.fd-name-row { display: flex; align-items: center; justify-content: space-between; flex: 1 1 auto; min-height: 0; padding-bottom: 60px; }
+.fd-name .tag { font-family: var(--ex-font-brand); font-weight: 300; font-size: 112px; line-height: 1; letter-spacing: -.04em; color: var(--ex-ink-900); }
+.fd-name .tag b { font-weight: 300; color: var(--ex-espresso); }
+.fd-name .wm { margin-top: 92px; display: flex; align-items: baseline; gap: 40px; font-family: var(--ex-font-brand); font-weight: 300; font-size: 150px; line-height: 1; letter-spacing: -.04em; color: var(--ex-ink-900); }
+.fd-name .wm em { font-style: normal; color: var(--ex-espresso); }
+.fd-name .wm small { font-size: 40px; letter-spacing: -.01em; color: var(--ex-slate-500); }
+.fd-name .parts { margin-top: 64px; display: flex; align-items: center; gap: 52px; }
+.fd-name .parts b { display: block; font-family: var(--ex-font-brand); font-weight: 400; font-size: 44px; letter-spacing: -.02em; }
+.fd-name .parts span { display: block; margin-top: 12px; font-size: 30px; color: var(--ex-slate-500); letter-spacing: -.015em; }
+.fd-name .plus { font-style: normal; font-size: 40px; color: var(--ex-slate-300); }
+.fd-name svg.big { flex: none; width: 500px; height: auto; max-width: none; max-height: none; }
+/* ── 구현 화면 ── */
+.fd-scr-row { display: grid; grid-template-columns: 990px 1fr; gap: 64px; flex: 1 1 auto; min-height: 0; }
+.fd-scr .win { align-self: start; border-radius: 16px; border: 1px solid var(--ex-line-200); background: var(--ex-white); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--ex-elevation-raised); }
+.fd-scr .win .bar { flex: none; height: 32px; background: var(--ex-surface-100); display: flex; align-items: center; gap: 8px; padding-left: 16px; }
+.fd-scr .win .bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--ex-slate-300); display: block; }
+.fd-scr .win img { display: block; width: 990px; height: 618px; object-fit: cover; object-position: top left; max-width: none; max-height: none; }
+.fd-scr .side { display: flex; flex-direction: column; min-height: 0; }
+.fd-scr .side .k { font-size: 22px; font-weight: 600; color: var(--ex-slate-500); padding-bottom: 12px; }
+.fd-scr .way { list-style: none; border-top: 1px solid var(--ex-line-200); }
+.fd-scr .way li { display: flex; align-items: center; gap: 14px; padding: 10px 0; font-size: 24px; color: var(--ex-slate-400); letter-spacing: -.015em; border-bottom: 1px solid var(--ex-line-inner); }
+.fd-scr .way li b { width: 28px; font-family: var(--ex-font-brand); font-weight: 400; }
+.fd-scr .way li.on { color: var(--ex-ink-900); font-weight: 600; }
+.fd-scr .way li.on b { color: var(--ex-espresso); }
+.fd-scr .mdl { align-self: flex-start; margin-top: 34px; display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 600; color: #9A4030; background: var(--fp-own); border: 1.5px dashed var(--fp-own-line); border-radius: 10px; padding: 7px 14px; }
+.fd-scr .pts { list-style: none; margin-top: auto; display: grid; gap: 20px; }
+.fd-scr .pts li { position: relative; padding-left: 26px; font-size: 30px; line-height: 1.35; letter-spacing: -.02em; word-break: keep-all; }
+.fd-scr .pts li::before { content: ""; position: absolute; left: 0; top: .55em; width: 10px; height: 10px; border-radius: 50%; background: var(--ex-espresso); }
+/* ── 1.0 설계 범위 완성 — 열 단계 ── */
+.fd-done { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.fd-done .k { font-size: 24px; font-weight: 600; color: var(--ex-slate-500); padding-bottom: 22px; }
+.fd-done ol { list-style: none; flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr; gap: 36px 28px; }
+.fd-done li { border-top: 3px solid var(--ex-espresso); padding-top: 28px; display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto 1fr; align-items: center; column-gap: 12px; background: linear-gradient(var(--ex-white), var(--ex-surface-50)); border-radius: 0 0 18px 18px; padding: 28px 26px 0; }
+.fd-done li i { font-size: 44px; color: var(--ex-espresso); }
+.fd-done li b { font-family: var(--ex-font-brand); font-weight: 300; font-size: 30px; color: var(--ex-slate-400); }
+.fd-done li span { grid-column: 1 / -1; align-self: start; margin-top: 22px; font-size: 42px; font-weight: 600; letter-spacing: -.03em; word-break: keep-all; line-height: 1.2; }
+/* ── 개발 산출물 ── */
+.fd-out { display: grid; grid-template-columns: repeat(4, 1fr); gap: 26px; flex: 1 1 auto; min-height: 0; }
+.fd-out > div { background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 22px; padding: 34px 32px; display: flex; flex-direction: column; }
+.fd-out i.ph { font-size: 46px; color: var(--ex-espresso); }
+.fd-out .t { margin-top: 22px; padding-bottom: 22px; border-bottom: 1px solid var(--ex-line-200); font-size: 38px; font-weight: 600; letter-spacing: -.03em; }
+.fd-out ul { list-style: none; margin-top: 26px; display: grid; gap: 20px; }
+.fd-out li { position: relative; padding-left: 22px; font-size: 27px; line-height: 1.35; color: var(--ex-slate-700); letter-spacing: -.015em; word-break: keep-all; }
+.fd-out li::before { content: ""; position: absolute; left: 0; top: .6em; width: 8px; height: 8px; border-radius: 50%; background: var(--ex-slate-300); }
+/* ── 기대 성과 ── */
+.fd-gain { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.fd-gain .hdr, .fd-gain .row { display: grid; grid-template-columns: 76px 1fr 600px; align-items: center; }
+.fd-gain .hdr { padding: 14px 24px; background: var(--ex-surface-100); border-radius: 12px; font-size: 22px; color: var(--ex-slate-500); }
+.fd-gain .hdr span:last-child { padding-left: 32px; }
+.fd-gain .row { padding: 24px 24px; border-bottom: 1px solid var(--ex-line-200); }
+.fd-gain .row > i { font-size: 44px; color: var(--ex-espresso); }
+.fd-gain .k { font-size: 22px; font-weight: 600; color: var(--ex-espresso); }
+.fd-gain .t { margin-top: 6px; font-size: 36px; font-weight: 600; letter-spacing: -.03em; }
+.fd-gain .d { margin-top: 8px; font-size: 26px; color: var(--ex-slate-500); letter-spacing: -.015em; }
+.fd-gain .m { padding-left: 32px; border-left: 1px solid var(--ex-line-200); font-size: 28px; color: var(--ex-slate-700); letter-spacing: -.015em; word-break: keep-all; }
+.fd-gain .band { margin-top: auto; padding: 24px 30px; border-radius: 16px; background: var(--ex-bean-50); font-size: 30px; font-weight: 600; letter-spacing: -.02em; color: #6B2C20; }
 </style>
 </head>
 
@@ -1618,11 +1677,22 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp vh fd-video" data-title="시연 영상" data-kind="영상 자리 · 정지 화면" data-cam>
+<section class="slide fp fd-name" data-title="이름의 뜻" data-kind="이름 풀이">
   <div class="frame">
-    <div class="fd-poster">
-      <div class="wm"><span class="vh-wm in dl-2" data-morph="wm0">Expre<em>ss</em>o</span></div>
-      <div class="cap in in-fade dl-4"><i class="ph ph-play-circle"></i>시연 영상</div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="sec">심화전공프로젝트 최종 발표</span><span class="pg"></span></div>
+    <div class="body">
+      <div class="fd-name-row">
+        <div class="txt">
+          <div class="tag in dl-2">Express your <b>work.</b></div>
+          <div class="wm"><span data-morph="wm0" style="display: inline-block">Expre<em>ss</em>o</span><small class="in in-fade dl-3">Express + Espresso</small></div>
+          <div class="parts">
+            <div class="in dl-4"><b>Express</b><span>나의 경험과 역량을 표현</span></div>
+            <i class="plus in in-fade dl-4">+</i>
+            <div class="in dl-5"><b>Espresso</b><span>경험의 핵심을 한 잔에 압축</span></div>
+          </div>
+        </div>
+        <svg class="big in in-fade dl-3" viewBox="0 0 54 48" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg>
+      </div>
     </div>
   </div>
 </section>
@@ -1634,13 +1704,13 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fp-cols fp-toc fd-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li>선정 배경</li></ul></div>
-        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li></ul></div>
+        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li><li>구현 화면</li></ul></div>
         <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 학습과 성능</li><li>추천 모델 평가 결과</li><li>추천 모델 아키텍처</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
-          <ul><li>개발 범위</li><li>개발팀 구성 및 역할</li><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul>
+          <ul><li>개발팀 구성 및 역할</li><li>개발 범위</li><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul>
         </div>
         <div class="in dl-7"><div class="n">5</div><div class="t">Lessons &amp; Learned</div></div>
-        <div class="in dl-8"><div class="n">6</div><div class="t">결론</div><ul><li>기대 효과와 남은 일</li></ul></div>
+        <div class="in dl-8"><div class="n">6</div><div class="t">결론</div><ul><li>개발 산출물</li><li>기대 성과</li></ul></div>
       </div>
     </div>
   </div>
@@ -1817,6 +1887,132 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="ad" style="left: 914px; top: 522px"><div class="dot"><i class="ph ph-users-three"></i></div><span class="nm">더미 계정 관리</span></div>
         <div class="ad" style="left: 1244px; top: 522px"><div class="dot"><i class="ph ph-heartbeat"></i></div><span class="nm">시스템 상태</span></div>
 
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp fd-scr" data-title="구현 화면 · 커리어 기록" data-kind="화면 캡처">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>커리어 기록</h2>
+      <p class="sub">카테고리별 기록 작성과 관리</p>
+    </div>
+    <div class="body">
+      <div class="fd-scr-row">
+        <div class="win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-career.png" alt="커리어 기록 화면"></div>
+        <div class="side">
+          <div class="k in in-fade dl-3">구현 화면</div>
+          <ol class="way in in-fade dl-3"><li class="on"><b>1</b>커리어 기록</li><li><b>2</b>채용 공고 탐색</li><li><b>3</b>재료 고르기</li><li><b>4</b>다듬기</li><li><b>5</b>공개 포트폴리오</li><li><b>6</b>방문자 데이터 분석</li></ol>
+          
+          <ul class="pts in dl-5"><li>갤러리 · 테이블 · 타임라인 보기 제공</li><li>초안 · 정리됨 · 검증됨 상태 구분</li><li>성과 수치가 빈 기록에 AI 질문 생성</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp fd-scr" data-title="구현 화면 · 채용 공고 탐색" data-kind="화면 캡처">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>채용 공고 탐색</h2>
+      <p class="sub">수집한 채용 공고의 조건 검색과 추천</p>
+    </div>
+    <div class="body">
+      <div class="fd-scr-row">
+        <div class="win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-jobs.png" alt="채용 공고 탐색 화면"></div>
+        <div class="side">
+          <div class="k in in-fade dl-3">구현 화면</div>
+          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록</li><li class="on"><b>2</b>채용 공고 탐색</li><li><b>3</b>재료 고르기</li><li><b>4</b>다듬기</li><li><b>5</b>공개 포트폴리오</li><li><b>6</b>방문자 데이터 분석</li></ol>
+          <div class="mdl in in-fade dl-4"><i class="ph ph-sparkle"></i>채용 공고 추천 모델</div>
+          <ul class="pts in dl-5"><li>국내외 채용 공고 수집 · 직무별 분류</li><li>자연어 조건 검색</li><li>내 기록과 가까운 순 정렬</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp fd-scr" data-title="구현 화면 · 재료 고르기" data-kind="화면 캡처">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>재료 고르기</h2>
+      <p class="sub">채용 공고 요건에 맞춘 커리어 기록 선택</p>
+    </div>
+    <div class="body">
+      <div class="fd-scr-row">
+        <div class="win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-materials.png" alt="재료 고르기 화면"></div>
+        <div class="side">
+          <div class="k in in-fade dl-3">구현 화면</div>
+          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록</li><li><b>2</b>채용 공고 탐색</li><li class="on"><b>3</b>재료 고르기</li><li><b>4</b>다듬기</li><li><b>5</b>공개 포트폴리오</li><li><b>6</b>방문자 데이터 분석</li></ol>
+          <div class="mdl in in-fade dl-4"><i class="ph ph-sparkle"></i>커리어 기록 추천 모델</div>
+          <ul class="pts in dl-5"><li>채용 공고 요건 기준 기록 순위 산출</li><li>포트폴리오당 기록 최대 10건 선택</li><li>에이전트 모드 · Cowork 모드 선택</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp fd-scr" data-title="구현 화면 · 다듬기" data-kind="화면 캡처">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>다듬기</h2>
+      <p class="sub">생성한 포트폴리오의 검토 · 수정 · 배포</p>
+    </div>
+    <div class="body">
+      <div class="fd-scr-row">
+        <div class="win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-edit.png" alt="다듬기 화면"></div>
+        <div class="side">
+          <div class="k in in-fade dl-3">구현 화면</div>
+          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록</li><li><b>2</b>채용 공고 탐색</li><li><b>3</b>재료 고르기</li><li class="on"><b>4</b>다듬기</li><li><b>5</b>공개 포트폴리오</li><li><b>6</b>방문자 데이터 분석</li></ol>
+          
+          <ul class="pts in dl-5"><li>지면 요소 선택 후 대화로 수정</li><li>수정마다 새 판 저장 · 이전 판 복원</li><li>데스크톱 · 모바일 미리보기 후 배포</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp fd-scr" data-title="구현 화면 · 공개 포트폴리오" data-kind="화면 캡처">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>공개 포트폴리오</h2>
+      <p class="sub">공개 주소로 배포한 포트폴리오</p>
+    </div>
+    <div class="body">
+      <div class="fd-scr-row">
+        <div class="win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-public-portfolio.png" alt="공개 포트폴리오 화면"></div>
+        <div class="side">
+          <div class="k in in-fade dl-3">구현 화면</div>
+          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록</li><li><b>2</b>채용 공고 탐색</li><li><b>3</b>재료 고르기</li><li><b>4</b>다듬기</li><li class="on"><b>5</b>공개 포트폴리오</li><li><b>6</b>방문자 데이터 분석</li></ol>
+          
+          <ul class="pts in dl-5"><li>사용자별 공개 주소 발급</li><li>성과 수치 중심 첫 화면 구성</li><li>커리어 기록 기반 대표 작업 구성</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp fd-scr" data-title="구현 화면 · 방문자 데이터 분석" data-kind="화면 캡처">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>방문자 데이터 분석</h2>
+      <p class="sub">배포한 포트폴리오의 방문 기록 분석</p>
+    </div>
+    <div class="body">
+      <div class="fd-scr-row">
+        <div class="win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-analytics.png" alt="방문자 데이터 분석 화면"></div>
+        <div class="side">
+          <div class="k in in-fade dl-3">구현 화면</div>
+          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록</li><li><b>2</b>채용 공고 탐색</li><li><b>3</b>재료 고르기</li><li><b>4</b>다듬기</li><li><b>5</b>공개 포트폴리오</li><li class="on"><b>6</b>방문자 데이터 분석</li></ol>
+          
+          <ul class="pts in dl-5"><li>방문 · 평균 체류 · 끝까지 읽은 비율 집계</li><li>섹션별 체류 시간 · 유입 경로 분석</li><li>집계 결과의 해설 생성</li></ul>
+        </div>
       </div>
     </div>
   </div>
@@ -2089,6 +2285,45 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
+<section class="slide fp" data-title="개발팀 구성 및 역할" data-kind="담당">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>개발팀 구성 및 역할</h2>
+      <p class="sub">서비스 흐름 순서의 담당 도메인</p>
+    </div>
+    <div class="body">
+      <div class="fp-team">
+        <div class="col in dl-3">
+          <div class="stage"><i class="ph ph-notebook"></i>커리어 기록</div><div class="rule"></div>
+          <div class="name">오시건</div><div class="role">백엔드</div>
+          <ul><li>기록 작성 · 편집 · 분류</li><li>기록 검색 · 첨부</li><li>계정 · 인증</li><li>DB 스키마 · 마이그레이션</li></ul>
+        </div>
+        <div class="col in dl-4">
+          <div class="stage"><i class="ph ph-magnifying-glass"></i>채용 공고</div><div class="rule"></div>
+          <div class="name">심민규</div><div class="role">백엔드</div>
+          <ul><li>채용 공고 수집 · 정규화</li><li>검색 · 필터</li><li>CI/CD 구축</li><li>서버 운영 · 모니터링</li></ul>
+        </div>
+        <div class="col in dl-5">
+          <div class="stage" style="font-size: 23px; white-space: nowrap; gap: 8px"><i class="ph ph-chats-circle"></i>채용 공고 분석 · AI 인터뷰</div><div class="rule"></div>
+          <div class="name">채서현</div><div class="role">백엔드 · AI</div>
+          <ul><li>채용 공고 요건 · 역량 추출</li><li>인터뷰 질문 생성</li><li>인터뷰 응답 처리</li></ul>
+        </div>
+        <div class="col in dl-6">
+          <div class="stage"><i class="ph ph-rocket-launch"></i>생성 · 배포 · 추천 모델</div><div class="rule"></div>
+          <div class="name">박민재</div><div class="role"><b>팀장</b>PM · AI · 프론트</div>
+          <ul><li>포트폴리오 생성 · 편집</li><li>공개 사이트 배포</li><li>추천 모델 학습 · 평가</li><li>시스템 구조 · UI/UX</li></ul>
+        </div>
+        <div class="col in dl-7">
+          <div class="stage"><i class="ph ph-chart-line-up"></i>AI 대화 · 방문 분석</div><div class="rule"></div>
+          <div class="name">윤규현</div><div class="role">데이터 · AI</div>
+          <ul><li>AI 대화 · 맥락 관리</li><li>대화 기반 기록 연동</li><li>사용량 · 요금제</li><li>방문자 통계 · 분석</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="slide fp vh fd-scope" data-title="개발 범위" data-kind="마일스톤과 버전">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
@@ -2131,46 +2366,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="개발팀 구성 및 역할" data-kind="담당">
-  <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>개발팀 구성 및 역할</h2>
-      <p class="sub">서비스 흐름 순서의 담당 도메인</p>
-    </div>
-    <div class="body">
-      <div class="fp-team">
-        <div class="col in dl-3">
-          <div class="stage"><i class="ph ph-notebook"></i>커리어 기록</div><div class="rule"></div>
-          <div class="name">오시건</div><div class="role">백엔드</div>
-          <ul><li>기록 작성 · 편집 · 분류</li><li>기록 검색 · 첨부</li><li>계정 · 인증</li><li>DB 스키마 · 마이그레이션</li></ul>
-        </div>
-        <div class="col in dl-4">
-          <div class="stage"><i class="ph ph-magnifying-glass"></i>채용 공고</div><div class="rule"></div>
-          <div class="name">심민규</div><div class="role">백엔드</div>
-          <ul><li>채용 공고 수집 · 정규화</li><li>검색 · 필터</li><li>CI/CD 구축</li><li>서버 운영 · 모니터링</li></ul>
-        </div>
-        <div class="col in dl-5">
-          <div class="stage" style="font-size: 23px; white-space: nowrap; gap: 8px"><i class="ph ph-chats-circle"></i>채용 공고 분석 · AI 인터뷰</div><div class="rule"></div>
-          <div class="name">채서현</div><div class="role">백엔드 · AI</div>
-          <ul><li>채용 공고 요건 · 역량 추출</li><li>인터뷰 질문 생성</li><li>인터뷰 응답 처리</li></ul>
-        </div>
-        <div class="col in dl-6">
-          <div class="stage"><i class="ph ph-rocket-launch"></i>생성 · 배포 · 추천 모델</div><div class="rule"></div>
-          <div class="name">박민재</div><div class="role"><b>팀장</b>PM · AI · 프론트</div>
-          <ul><li>포트폴리오 생성 · 편집</li><li>공개 사이트 배포</li><li>추천 모델 학습 · 평가</li><li>시스템 구조 · UI/UX</li></ul>
-        </div>
-        <div class="col in dl-7">
-          <div class="stage"><i class="ph ph-chart-line-up"></i>AI 대화 · 방문 분석</div><div class="rule"></div>
-          <div class="name">윤규현</div><div class="role">데이터 · AI</div>
-          <ul><li>AI 대화 · 맥락 관리</li><li>대화 기반 기록 연동</li><li>사용량 · 요금제</li><li>방문자 통계 · 분석</li></ul>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="slide fp vh " data-title="1.0 설계 범위 완성" data-kind="단계와 화면">
+<section class="slide fp vh " data-title="1.0 설계 범위 완성" data-kind="열 단계 완료">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">4</span><span class="sec">개발 과정</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -2178,16 +2374,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">11-14 · 설계서 열 단계의 운영 환경 동작</p>
     </div>
     <div class="body">
-      <div class="vh-v10">
-        <div class="fd-steps in dl-3"><div class="k">설계서의 사용자 흐름</div><ol><li><i class="ph ph-check-circle"></i>커리어 기록</li><li><i class="ph ph-check-circle"></i>채용 공고 탐색</li><li><i class="ph ph-check-circle"></i>채용 공고 분석</li><li><i class="ph ph-check-circle"></i>재료 고르기</li><li><i class="ph ph-check-circle"></i>AI 대화</li><li><i class="ph ph-check-circle"></i>레시피</li><li><i class="ph ph-check-circle"></i>디자인 선택</li><li><i class="ph ph-check-circle"></i>다듬기</li><li><i class="ph ph-check-circle"></i>배포</li><li><i class="ph ph-check-circle"></i>방문자 데이터 분석</li></ol></div>
-        <div class="fp-shots in in-fade dl-4">
-          <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-career.png" alt="커리어 기록 화면"></div><div class="cap">커리어 기록</div></div>
-          <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-jobs.png" alt="공고 탐색 화면"></div><div class="cap">채용 공고 탐색</div></div>
-          <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-materials.png" alt="재료 고르기 화면"></div><div class="cap">재료 고르기</div></div>
-          <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-edit.png" alt="다듬기 화면"></div><div class="cap">다듬기</div></div>
-          <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-public-portfolio.png" alt="공개 포트폴리오 화면"></div><div class="cap">공개 포트폴리오</div></div>
-          <div class="fp-shot"><div class="win"><div class="bar"><i></i><i></i><i></i></div><img src="assets/최종-발표/screen-analytics.png" alt="방문자 데이터 분석 화면"></div><div class="cap">방문자 데이터 분석</div></div>
-        </div>
+      <div class="fd-done"><div class="k in in-fade dl-3">설계서의 사용자 흐름</div><ol class="in dl-4"><li><i class="ph ph-check-circle"></i><b>01</b><span>커리어 기록</span></li><li><i class="ph ph-check-circle"></i><b>02</b><span>채용 공고 탐색</span></li><li><i class="ph ph-check-circle"></i><b>03</b><span>채용 공고 분석</span></li><li><i class="ph ph-check-circle"></i><b>04</b><span>재료 고르기</span></li><li><i class="ph ph-check-circle"></i><b>05</b><span>AI 대화</span></li><li><i class="ph ph-check-circle"></i><b>06</b><span>레시피</span></li><li><i class="ph ph-check-circle"></i><b>07</b><span>디자인 선택</span></li><li><i class="ph ph-check-circle"></i><b>08</b><span>다듬기</span></li><li><i class="ph ph-check-circle"></i><b>09</b><span>배포</span></li><li><i class="ph ph-check-circle"></i><b>10</b><span>방문자 데이터 분석</span></li></ol></div>
       </div>
     </div>
   </div>
@@ -2339,6 +2526,15 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
+<section class="slide fp vh fd-video" data-title="시연 영상" data-kind="영상 자리 · 정지 화면">
+  <div class="frame">
+    <div class="fd-poster">
+      <div class="wm"><span class="vh-wm in dl-2">Expre<em>ss</em>o 2.<i>0</i></span></div>
+      <div class="cap in in-fade dl-4"><i class="ph ph-play-circle"></i>시연 영상</div>
+    </div>
+  </div>
+</section>
+
 <section class="slide fp" data-title="Lessons &amp; Learned" data-kind="임시 · 내용 논의 전">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">5</span><span class="sec">Lessons &amp; Learned</span><span class="pg"></span></div>
@@ -2363,52 +2559,32 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="기대 효과와 남은 일" data-kind="세 열 그림">
+<section class="slide fp" data-title="개발 산출물" data-kind="네 열 목록">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">6</span><span class="sec">결론</span><span class="pg"></span></div>
     <div class="head in dl-2">
-      <h2>기대 효과와 남은 일</h2>
-      <p class="sub">지원 준비 · 경험 정리 · 배포 이후</p>
+      <h2>개발 산출물</h2>
+      <p class="sub">서비스 · 데이터셋 · AI 모델 · 문서</p>
     </div>
     <div class="body">
-      <div class="fp-cols fp-effect">
-        <div class="in dl-3">
-          <div class="k">지원 준비</div><div class="t">커리어 기록 재사용</div>
-          <div class="pic"><svg viewBox="0 0 480 270" aria-hidden="true">
-            <g style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"><rect x="40" y="62" width="130" height="34" rx="8"/><rect x="40" y="118" width="130" height="34" rx="8"/><rect x="40" y="174" width="130" height="34" rx="8"/></g>
-            <g class="s-ar" style="stroke-width: 2.5"><path d="M182 135 C240 135 250 66 318 66"/><path d="M182 135 H318"/><path d="M182 135 C240 135 250 204 318 204"/></g>
-            <g style="fill: var(--ex-white); stroke: var(--ex-slate-300); stroke-width: 1.5"><rect x="326" y="36" width="110" height="60" rx="8"/><rect x="326" y="105" width="110" height="60" rx="8"/><rect x="326" y="174" width="110" height="60" rx="8"/></g>
-            <g style="fill: var(--ex-espresso)"><rect x="338" y="48" width="56" height="10" rx="5"/><rect x="338" y="135" width="56" height="10" rx="5"/><rect x="338" y="204" width="86" height="10" rx="5"/></g>
-          </svg></div>
-          <div class="p">쌓아 둔 기록에서 채용 공고에 맞는 경험 선택</div>
-        </div>
-        <div class="in dl-4">
-          <div class="k">경험 정리</div><div class="t">AI 인터뷰로 기록 보완</div>
-          <div class="pic"><svg viewBox="0 0 480 270" aria-hidden="true">
-            <rect x="40" y="40" width="230" height="56" rx="18" style="fill: var(--ex-bean-50); stroke: var(--ex-espresso); stroke-width: 1.5"/>
-            <rect x="64" y="62" width="150" height="12" rx="6" style="fill: var(--ex-espresso); opacity: .55"/>
-            <rect x="210" y="112" width="230" height="56" rx="18" style="fill: var(--ex-ink-900)"/>
-            <rect x="234" y="134" width="170" height="12" rx="6" style="fill: #fff; opacity: .7"/>
-            <path d="M240 180 V204" class="s-ar" style="stroke-width: 2.5"/><path d="M230 196 L240 208 L250 196" class="s-ar" style="stroke-width: 2.5"/>
-            <rect x="130" y="212" width="220" height="38" rx="10" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"/>
-            <path d="M150 231 l8 8 l14 -16" style="fill: none; stroke: var(--fp-in-line); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round"/>
-            <rect x="186" y="225" width="130" height="12" rx="6" style="fill: var(--fp-in-line); opacity: .6"/>
-          </svg></div>
-          <div class="p">채용 공고 요건 기반 질문 생성 · 답변 기록 저장</div>
-        </div>
-        <div class="in dl-5">
-          <div class="k">배포 이후</div><div class="t">방문 분석 기반 개선</div>
-          <div class="pic"><svg viewBox="0 0 480 270" aria-hidden="true">
-            <g style="fill: var(--ex-tint-100)"><rect x="150" y="62" width="290" height="26" rx="13"/><rect x="150" y="122" width="290" height="26" rx="13"/><rect x="150" y="182" width="290" height="26" rx="13"/></g>
-            <rect x="150" y="62" width="236" height="26" rx="13" style="fill: var(--ex-espresso)"/>
-            <rect x="150" y="122" width="132" height="26" rx="13" style="fill: var(--ex-slate-400)"/>
-            <rect x="150" y="182" width="64" height="26" rx="13" style="fill: var(--ex-slate-400)"/>
-            <g style="fill: var(--ex-slate-300)"><rect x="40" y="68" width="90" height="14" rx="7"/><rect x="40" y="128" width="70" height="14" rx="7"/><rect x="40" y="188" width="80" height="14" rx="7"/></g>
-          </svg></div>
-          <div class="p">방문 수 · 섹션별 체류 시간 분석</div>
-        </div>
+      <div class="fd-out"><div class="in dl-3"><i class="ph ph-globe"></i><div class="t">서비스</div><ul><li>expresso.ai.kr 운영 배포</li><li>1.0 열 단계 사용자 흐름</li><li>2.0 Expresso Agent 대화 흐름</li><li>채용 공고 소스 · 계정 · 시스템 관리</li></ul></div><div class="in dl-4"><i class="ph ph-database"></i><div class="t">데이터셋</div><ul><li>수집 · 정규화한 채용 공고</li><li>합성 커리어 프로필 · 기록</li><li>교사 LLM 적합도 라벨 · 요건별 근거</li><li>한국어 평가 세트 · 프로필 40명 × 채용 공고 32건</li></ul></div><div class="in dl-5"><i class="ph ph-brain"></i><div class="t">AI 모델</div><ul><li>채용 공고 추천 모델</li><li>커리어 기록 추천 모델</li><li>CPU 추론 패키지(ONNX)</li><li>학습 · 평가 재현 코드</li></ul></div><div class="in dl-6"><i class="ph ph-files"></i><div class="t">문서</div><ul><li>제안서 · 설계서</li><li>기능 · 구현 · 데이터 모델 명세서</li><li>추천 모델 학습 · 평가 보고서</li><li>운영 배포 · 복구 절차</li></ul></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp" data-title="기대 성과" data-kind="성과와 확인 방법">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">6</span><span class="sec">결론</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>기대 성과</h2>
+      <p class="sub">사용자 편의 · 추천 품질 · 커리어 성장</p>
+    </div>
+    <div class="body">
+      <div class="fd-gain">
+        <div class="hdr in in-fade dl-3"><span></span><span>기대 성과</span><span>평가 · 확인</span></div>
+        <div class="row in dl-4"><i class="ph ph-clock"></i><div><div class="k">사용자 편의</div><div class="t">반복 정리 감소와 지원 준비 효율 향상</div><div class="d">커리어 기록 재사용 · 채용 공고별 포트폴리오 생성 · 배포</div></div><div class="m">주요 작업 완료율 · 포트폴리오 제작 소요 시간</div></div><div class="row in dl-5"><i class="ph ph-chart-line-up"></i><div><div class="k">추천 품질</div><div class="t">채용 공고와 커리어 기록의 적합도 순위 개선</div><div class="d">자체 학습 모델의 채용 공고 순위 · 요건별 근거 기록</div></div><div class="m">NDCG@10 0.236 → 0.589 · 근거 Hit@3 88.7%</div></div><div class="row in dl-6"><i class="ph ph-plant"></i><div><div class="k">커리어 성장</div><div class="t">기록이 없는 사용자의 지원 준비 시작</div><div class="d">구직 목표 설정 · 역량 진단 · 활동 추천 · 기록 작성 도움</div></div><div class="m">목표 설정에서 포트폴리오 배포까지의 완주율</div></div>
+        <div class="band in in-fade dl-7">커리어 기록을 중심으로 구직 목표 설정부터 채용 공고 맞춤 포트폴리오 배포까지 지원</div>
       </div>
-      <div class="fd-rest in in-fade dl-6"><b>남은 일</b><span>대화형 제작의 운영 완주 · 구직 목표에서 포트폴리오 배포까지 운영 환경 한 번의 완주 확인</span></div>
     </div>
   </div>
 </section>
