@@ -1491,6 +1491,8 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-distill .nm { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
 .fd-distill .ax { font-family: var(--ex-font-ui); font-size: 18px; fill: var(--ex-slate-400); }
 .fd-distill .trk { fill: var(--ex-tint-100); opacity: .6; }
+.fd-distill .hero { font-family: var(--ex-font-brand); font-size: 76px; font-weight: 300; letter-spacing: -.035em; fill: #8A5A12; }
+.fd-distill .mk { font-family: var(--ex-font-ui); font-size: 21px; font-weight: 600; fill: var(--ex-slate-500); }
 .fd-distill .bar.base { fill: var(--ex-slate-400); }
 .fd-distill .bar.own { fill: #E9A84A; }
 .fd-distill .bar.ext { fill: var(--fp-ext-line); }
@@ -1859,7 +1861,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">교사 LLM 판정으로 학습한 두 모델의 순위 품질</p>
     </div>
     <div class="body">
-      <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨과 요건별 근거를 만들고, 그것으로 경력 근거 헤드와 공고 순위 결합 모델을 학습시킨 뒤 NDCG@10으로 평가한 결과">
+      <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨과 요건별 근거를 만들고, 그것으로 경력 근거 헤드와 채용 공고 순위 결합 모델을 학습시킨 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236에서 0.589로 2.5배, 요건별 근거 기록의 Hit@3는 88.7%">
         <defs>
           <marker id="fdd-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker>
           <pattern id="fdd-hatch" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: var(--ex-tint-100)"></rect></pattern>
@@ -1909,10 +1911,16 @@ svg [data-morph] { transform-box: fill-box; }
         </g>
         <g class="in dl-8">
           <path d="M1028 500H976" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1002" y="480" text-anchor="middle">평가</text>
-          <text class="t" x="0" y="384">NDCG@10</text><text class="d" x="186" y="383">한국어 평가 · 프로필 40명 × 채용 공고 32건</text>
-          <g style="stroke: var(--ex-line-200); stroke-width: 1.5"><line x1="270" y1="414" x2="270" y2="622"></line><line x1="605" y1="414" x2="605" y2="622"></line><line x1="940" y1="414" x2="940" y2="622"></line></g>
-          <text class="nm" x="0" y="460">파일럿 MLP</text><rect class="trk" x="270" y="436" width="670" height="34" rx="17"></rect><rect class="bar base" x="270" y="436" width="158" height="34" rx="17"></rect><text class="val base" x="442" y="462">0.236</text><text class="nm" x="0" y="522">추천 모델</text><rect class="trk" x="270" y="498" width="670" height="34" rx="17"></rect><rect class="bar own" x="270" y="498" width="395" height="34" rx="17"></rect><text class="val own" x="679" y="524">0.589</text><text class="nm" x="0" y="584">Decisions 재정렬</text><rect class="trk" x="270" y="560" width="670" height="34" rx="17"></rect><rect class="bar ext" x="270" y="560" width="447" height="34" rx="17"></rect><text class="val ext" x="731" y="586">0.667</text>
-          <text class="ax" x="270" y="646" text-anchor="middle">0</text><text class="ax" x="605" y="646" text-anchor="middle">0.5</text><text class="ax" x="940" y="646" text-anchor="middle">1.0</text>
+          <text class="t" x="0" y="384">채용 공고 순위</text><text class="mk" x="188" y="383">NDCG@10</text>
+          <text class="hero" x="0" y="468">2.5배</text><text class="d" x="212" y="462">파일럿 MLP 대비</text>
+          <text class="nm" x="0" y="522">파일럿 MLP</text><rect class="trk" x="160" y="500" width="300" height="30" rx="15"></rect><rect class="bar base" x="160" y="500" width="71" height="30" rx="15"></rect><text class="val base" x="243" y="524" style="font-size:28px">0.236</text><text class="nm" x="0" y="570">추천 모델</text><rect class="trk" x="160" y="548" width="300" height="30" rx="15"></rect><rect class="bar own" x="160" y="548" width="177" height="30" rx="15"></rect><text class="val own" x="349" y="572" style="font-size:28px">0.589</text>
+          <text class="ax" x="0" y="640" style="font-size:19px">한국어 평가 · 프로필 40명 × 채용 공고 32건</text>
+          <line x1="492" y1="362" x2="492" y2="644" style="stroke: var(--ex-line-200); stroke-width: 1.5"></line>
+          <text class="t" x="524" y="384">요건별 근거 기록</text><text class="mk" x="738" y="383">Hit@3</text>
+          <text class="hero" x="524" y="468">88.7%</text>
+          <text class="d" x="524" y="520">근거 기록을 상위 3건 안에 찾은 요건</text>
+          <text class="nm" x="524" y="566" style="font-size:22px">Recall@3 74.4% · MRR@3 0.740</text>
+          <text class="ax" x="524" y="640" style="font-size:19px">한국어 평가 · 근거가 있는 요건 1,503개</text>
         </g>
       </svg>
     </div>
