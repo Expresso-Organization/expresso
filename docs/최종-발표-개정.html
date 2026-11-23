@@ -3387,8 +3387,9 @@ window.deck = new Deck();
       fresh.forEach((x, i) => {
         x.dataset.rxSeen = '1';
         if (p.quiet) return;
-        x.style.transition = 'none'; x.style.opacity = '0'; x.style.transform = 'translateY(10px)';
-        p.revealTimers.push(setTimeout(() => { x.style.transition = REVEAL; x.style.opacity = '1'; x.style.transform = ''; }, 40 + i * p.cfg.reveal.gap));
+        /* 부품만 남기는 스타일이 전환을 !important로 막으므로, 드러내기 전환도 !important로 겁니다. */
+        x.style.setProperty('transition', 'none', 'important'); x.style.setProperty('opacity', '0', 'important'); x.style.setProperty('transform', 'translateY(12px)', 'important');
+        p.revealTimers.push(setTimeout(() => { x.style.setProperty('transition', REVEAL, 'important'); x.style.setProperty('opacity', '1', 'important'); x.style.setProperty('transform', 'none', 'important'); }, 60 + i * p.cfg.reveal.gap));
       });
     }
     const r = el.getBoundingClientRect(); let bottom = r.bottom;
