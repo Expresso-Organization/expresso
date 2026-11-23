@@ -1427,6 +1427,24 @@ svg [data-morph] { transform-box: fill-box; }
   .deck-stage > .slide.fd-reveal .fd-roll, .deck-stage > .slide.fd-reveal .fd-roll *, .deck-stage > .slide.fd-reveal .vh-wm i, .deck-stage > .slide.fd-reveal::before { animation: none !important; }
 }
 
+/* 서비스 개요 — 제안서 「아이디어 소개」 · 「배포와 방문 분석」의 그림체(번호 단계, 작은 화면 그림, 점선 호)를 한 흐름으로 다시 짠 것 */
+.fd-flow .jn { font-family: var(--ex-font-mono); font-size: 20px; letter-spacing: .14em; fill: var(--ex-slate-400); }
+.fd-flow .jt { font-family: var(--ex-font-ui); font-size: 32px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-flow .jg2 { font-family: var(--ex-font-ui); font-size: 21px; letter-spacing: -.02em; fill: var(--ex-slate-500); }
+.fd-flow .jc { fill: var(--ex-white); stroke: var(--ex-line-200); }
+.fd-flow .jf { fill: var(--ex-tint-50); }
+.fd-flow .jb { fill: var(--ex-tint-100); }
+.fd-flow .jk { fill: var(--ex-track); }
+.fd-flow .jd { fill: var(--ex-slate-300); }
+.fd-flow .ja { stroke: var(--ex-slate-300); stroke-width: 2; fill: none; }
+.fd-flow .js { font-family: var(--ex-font-ui); font-size: 17px; font-weight: 600; fill: var(--ex-espresso); }
+.fd-flow .js2 { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 500; letter-spacing: -.02em; fill: var(--ex-espresso); }
+.fd-flow .ju { font-family: var(--ex-font-mono); font-size: 14px; fill: var(--ex-slate-500); }
+.fd-flow .jl { font-family: var(--ex-font-ui); font-size: 17px; fill: var(--ex-slate-400); }
+.fd-flow .jv { font-family: var(--ex-font-brand); font-size: 42px; font-weight: 300; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-flow .jp { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 500; letter-spacing: -.02em; fill: var(--ex-slate-500); }
+.fd-flow .jw { font-family: var(--ex-font-brand); font-size: 42px; font-weight: 500; letter-spacing: -.025em; fill: var(--ex-ink-900); }
+
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
 .fd-steps { display: flex; flex-direction: column; min-height: 0; }
@@ -1546,7 +1564,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="서비스 개요" data-kind="그림과 용어 풀이">
+<section class="slide fp" data-title="서비스 개요" data-kind="단계 흐름과 화면 그림">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -1554,31 +1572,100 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">커리어 기록과 채용 공고에서 공고 맞춤 포트폴리오까지</p>
     </div>
     <div class="body">
-      <svg class="in in-fade dl-3" viewBox="0 0 1712 400" style="width: 1712px; height: 400px; flex: none; max-width: none" aria-hidden="true">
+      <svg class="fd-flow" viewBox="0 0 1712 670" style="width: 1712px; height: 670px; flex: none; max-width: none; max-height: none" role="img" aria-label="커리어 기록과 채용 공고가 공고 맞춤 포트폴리오가 되고, 배포 뒤 방문 분석이 다음 포트폴리오로 돌아오는 흐름">
         <defs>
-          <marker id="fpo-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill: var(--ex-slate-400)"/></marker>
+          <clipPath id="svo-cp"><circle cx="44" cy="54" r="35.5"></circle></clipPath>
+          <mask id="svo-mk"><rect width="108" height="108" fill="#fff"></rect><circle cx="44" cy="54" r="47.05" fill="#000"></circle></mask>
         </defs>
-        <rect x="0" y="40" width="430" height="124" rx="22" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"/>
-        <text x="36" y="94" class="s-t">커리어 기록</text><text x="36" y="134" class="s-p">쌓아 둔 경험과 성과</text>
-        <rect x="0" y="212" width="430" height="124" rx="22" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"/>
-        <text x="36" y="266" class="s-t">채용 공고</text><text x="36" y="306" class="s-p">지원하려는 공고</text>
-        <path d="M430 102 C520 102 540 160 632 172" class="s-ar" marker-end="url(#fpo-tip)"/>
-        <path d="M430 274 C520 274 540 216 632 204" class="s-ar" marker-end="url(#fpo-tip)"/>
-        <circle cx="820" cy="188" r="186" style="fill: var(--ex-bean-50); stroke: var(--ex-espresso); stroke-width: 2.5"/>
-        <g transform="translate(766 62)"><svg class="cup" viewBox="0 0 54 48" width="108" height="96" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg></g>
-        <text x="820" y="226" text-anchor="middle" style="font-family: var(--ex-font-brand); font-weight: 400; font-size: 64px; letter-spacing: -.03em; fill: var(--ex-ink-900)">Expre<tspan style="fill: var(--ex-espresso)">ss</tspan>o</text>
-        <text x="820" y="276" text-anchor="middle" class="s-p" style="fill: var(--ex-bean-ink)">공고에 맞춘 경험 구성</text>
-        <path d="M1008 188 H1196" class="s-ar" marker-end="url(#fpo-tip)"/>
-        <rect x="1210" y="112" width="502" height="152" rx="22" style="fill: var(--fp-out); stroke: var(--fp-out-line); stroke-width: 1.5"/>
-        <text x="1246" y="178" class="s-t" style="font-size: 36px">맞춤 포트폴리오</text><text x="1246" y="222" class="s-p">공개 주소로 배포</text>
-        <path d="M1460 268 V330 Q1460 372 1418 372 H1010 Q968 372 954 332" class="s-ard" marker-end="url(#fpo-tip)"/>
-        <rect x="1070" y="352" width="330" height="40" style="fill: var(--ex-surface-50)"/>
-        <text x="1235" y="382" text-anchor="middle" class="s-p">방문 분석 → 다음 포트폴리오 개선</text>
+
+        <!-- 01 · 커리어 기록 — 아래에서 위로 쌓이고 맨 위가 방금 넣은 것 -->
+        <g class="in dl-3">
+          <text class="jn" x="0" y="20">01</text><text class="jt" x="0" y="62">커리어 기록</text><text class="jg2" x="0" y="100">프로젝트 · 활동 · 성과를 쌓아 두는 기록</text>
+          <g transform="translate(-20 60)">
+            <rect class="jc" x="20" y="306" width="300" height="58" rx="10"></rect>
+            <circle cx="46" cy="335" r="5.5" fill="var(--ex-slate-300)"></circle><rect class="jb" x="64" y="326" width="150" height="9" rx="4.5"></rect><rect class="jf" x="64" y="343" width="96" height="7" rx="3.5"></rect>
+            <rect class="jc" x="40" y="234" width="300" height="58" rx="10"></rect>
+            <circle cx="66" cy="263" r="5.5" fill="var(--ex-slate-300)"></circle><rect class="jb" x="84" y="254" width="176" height="9" rx="4.5"></rect><rect class="jf" x="84" y="271" width="120" height="7" rx="3.5"></rect>
+            <rect class="jc" x="60" y="162" width="300" height="58" rx="10"></rect>
+            <circle cx="86" cy="191" r="5.5" fill="var(--ex-slate-300)"></circle><rect class="jb" x="104" y="182" width="134" height="9" rx="4.5"></rect><rect class="jf" x="104" y="199" width="168" height="7" rx="3.5"></rect>
+            <rect class="jc" x="80" y="90" width="300" height="58" rx="10" style="stroke: var(--ex-espresso); stroke-opacity: .45"></rect>
+            <rect x="80" y="90" width="4" height="58" rx="2" fill="var(--ex-espresso)"></rect>
+            <circle cx="106" cy="119" r="5.5" fill="var(--ex-espresso)"></circle><rect class="jb" x="124" y="110" width="160" height="9" rx="4.5"></rect><rect class="jf" x="124" y="127" width="112" height="7" rx="3.5"></rect>
+          </g>
+        </g>
+        <line class="ja in in-fade dl-4" x1="388" y1="290" x2="428" y2="290"></line>
+
+        <!-- 02 · 채용 공고 — 검색하고 그중 하나를 고른다 -->
+        <g class="in dl-4">
+          <text class="jn" x="444" y="20">02</text><text class="jt" x="444" y="62">채용 공고</text><text class="jg2" x="444" y="100">지원할 공고의 탐색과 선택</text>
+          <g transform="translate(-156 60)">
+            <rect class="jc" x="600" y="90" width="380" height="52" rx="26"></rect>
+            <circle cx="628" cy="116" r="9" fill="none" stroke="var(--ex-slate-300)" stroke-width="2"></circle>
+            <line x1="635" y1="123" x2="641" y2="129" stroke="var(--ex-slate-300)" stroke-width="2" stroke-linecap="round"></line>
+            <rect class="jb" x="660" y="112" width="196" height="9" rx="4.5"></rect>
+            <rect class="jc" x="600" y="164" width="380" height="52" rx="10"></rect>
+            <circle class="jd" cx="628" cy="190" r="10"></circle><rect class="jb" x="656" y="182" width="150" height="9" rx="4.5"></rect><rect class="jf" x="656" y="198" width="94" height="7" rx="3.5"></rect>
+            <rect x="600" y="232" width="380" height="52" rx="10" fill="var(--ex-bean-50)" stroke="var(--ex-espresso)" stroke-width="1.5"></rect>
+            <circle cx="628" cy="258" r="10" fill="var(--ex-espresso)"></circle><rect x="656" y="250" width="150" height="9" rx="4.5" fill="var(--ex-espresso)" opacity=".55"></rect><rect x="656" y="266" width="104" height="7" rx="3.5" fill="var(--ex-espresso)" opacity=".28"></rect>
+            <text class="js" x="962" y="264" text-anchor="end">고른 공고</text>
+            <rect class="jc" x="600" y="300" width="380" height="52" rx="10"></rect>
+            <circle class="jd" cx="628" cy="326" r="10"></circle><rect class="jb" x="656" y="318" width="132" height="9" rx="4.5"></rect><rect class="jf" x="656" y="334" width="168" height="7" rx="3.5"></rect>
+          </g>
+        </g>
+        <line class="ja in in-fade dl-5" x1="840" y1="290" x2="872" y2="290"></line>
+
+        <!-- 03 · 공고 맞춤 포트폴리오 — 색이 든 두 덩이가 01 의 기록에서 온 것 -->
+        <g class="in dl-5">
+          <text class="jn" x="888" y="20">03</text><text class="jt" x="888" y="62">공고 맞춤 포트폴리오</text><text class="jg2" x="888" y="100">공고 요건에 맞춰 고른 경험으로 구성</text>
+          <g transform="translate(-292 60)">
+            <rect class="jc" x="1180" y="90" width="380" height="262" rx="12"></rect>
+            <path d="M1180 102a12 12 0 0 1 12-12h356a12 12 0 0 1 12 12v16h-380z" class="jf"></path>
+            <circle class="jd" cx="1200" cy="106" r="4"></circle><circle class="jd" cx="1214" cy="106" r="4"></circle><circle class="jd" cx="1228" cy="106" r="4"></circle>
+            <rect class="jb" x="1206" y="148" width="220" height="15" rx="7.5"></rect>
+            <rect class="jf" x="1206" y="174" width="290" height="7" rx="3.5"></rect>
+            <rect x="1206" y="204" width="332" height="60" rx="9" fill="var(--ex-bean-50)"></rect><rect x="1206" y="204" width="4" height="60" rx="2" fill="var(--ex-espresso)"></rect>
+            <rect x="1228" y="220" width="150" height="9" rx="4.5" fill="var(--ex-espresso)" opacity=".5"></rect><rect x="1228" y="238" width="248" height="7" rx="3.5" fill="var(--ex-espresso)" opacity=".22"></rect>
+            <rect x="1206" y="278" width="332" height="60" rx="9" fill="var(--ex-bean-50)"></rect><rect x="1206" y="278" width="4" height="60" rx="2" fill="var(--ex-espresso)"></rect>
+            <rect x="1228" y="294" width="188" height="9" rx="4.5" fill="var(--ex-espresso)" opacity=".5"></rect><rect x="1228" y="312" width="210" height="7" rx="3.5" fill="var(--ex-espresso)" opacity=".22"></rect>
+          </g>
+        </g>
+        <line class="ja in in-fade dl-6" x1="1284" y1="290" x2="1316" y2="290"></line>
+
+        <!-- 04 · 배포와 방문 분석 — 공개 주소의 방문 수 · 체류 시간 · 섹션별 체류 -->
+        <g class="in dl-6">
+          <text class="jn" x="1332" y="20">04</text><text class="jt" x="1332" y="62">배포와 방문 분석</text><text class="jg2" x="1332" y="100">공개 주소 배포 · 방문 수와 체류 시간 분석</text>
+          <rect class="jc" x="1332" y="150" width="380" height="262" rx="12"></rect>
+          <path d="M1332 162a12 12 0 0 1 12-12h356a12 12 0 0 1 12 12v22h-380z" class="jf"></path>
+          <circle class="jd" cx="1352" cy="167" r="4"></circle><circle class="jd" cx="1366" cy="167" r="4"></circle><circle class="jd" cx="1380" cy="167" r="4"></circle>
+          <rect class="jc" x="1400" y="156" width="256" height="22" rx="11"></rect>
+          <text class="ju" x="1414" y="172">minjae.expresso.ai.kr</text>
+          <text class="jl" x="1358" y="220">방문</text><text class="jv" x="1358" y="264">128</text>
+          <text class="jl" x="1540" y="220">평균 체류</text><text class="jv" x="1540" y="264">2:41</text>
+          <line x1="1358" y1="290" x2="1686" y2="290" stroke="var(--ex-line-200)" stroke-width="1"></line>
+          <rect class="jb" x="1358" y="315" width="84" height="8" rx="4"></rect>
+          <rect class="jk" x="1462" y="314" width="224" height="10" rx="5"></rect><rect x="1462" y="314" width="198" height="10" rx="5" fill="var(--ex-espresso)" opacity=".55"></rect>
+          <rect class="jb" x="1358" y="347" width="64" height="8" rx="4"></rect>
+          <rect class="jk" x="1462" y="346" width="224" height="10" rx="5"></rect><rect x="1462" y="346" width="122" height="10" rx="5" fill="var(--ex-slate-300)"></rect>
+          <rect class="jb" x="1358" y="379" width="96" height="8" rx="4"></rect>
+          <rect class="jk" x="1462" y="378" width="224" height="10" rx="5"></rect><rect x="1462" y="378" width="54" height="10" rx="5" fill="var(--ex-slate-300)"></rect>
+        </g>
+
+        <!-- 기록이 포트폴리오 안으로 들어가는 길. 02 아래로 돌아 03 에 닿는다 -->
+        <path class="in in-flow dl-7" d="M310 414 C 480 566, 880 566, 1010 420" fill="none" stroke="var(--ex-espresso)" stroke-width="2" stroke-opacity=".42" stroke-dasharray="7 6"></path>
+        <g class="in dl-8">
+          <text class="jp" x="660" y="584" text-anchor="middle">기록과 공고를 포트폴리오로 연결하는 하나의 플랫폼</text>
+          <g transform="translate(554 606) scale(0.42)">
+            <circle cx="77.72" cy="54" r="19.53" fill="none" stroke="var(--ex-crema)" stroke-width="9.35" mask="url(#svo-mk)"></circle>
+            <rect y="58.8" width="108" height="49.2" fill="var(--ex-espresso)" clip-path="url(#svo-cp)"></rect>
+            <circle cx="44" cy="54" r="35.5" fill="none" stroke="var(--ex-espresso)" stroke-width="11"></circle>
+          </g>
+          <text class="jw" x="612" y="644">Expre<tspan style="fill: var(--ex-espresso)">ss</tspan>o</text>
+        </g>
+
+        <!-- 방문 분석이 다음 포트폴리오로 돌아오는 길 -->
+        <path class="in in-flow dl-8" d="M1522 420 C 1500 520, 1230 520, 1180 422" fill="none" stroke="var(--ex-espresso)" stroke-width="2" stroke-opacity=".42" stroke-dasharray="7 6"></path>
+        <text class="js2 in in-fade dl-9" x="1350" y="536" text-anchor="middle">분석 결과로 다음 포트폴리오 개선</text>
       </svg>
-      <div class="fp-cols" style="grid-template-columns: repeat(2, 1fr); margin-top: 40px; border-top: 1px solid var(--ex-line-200); padding-top: 28px">
-        <div class="in dl-4"><div class="k">용어</div><div class="t" style="margin-top: 8px">커리어 기록</div><div class="p" style="margin-top: 8px">프로젝트 · 활동 · 성과를 쌓아 두는 기록</div></div>
-        <div class="in dl-5"><div class="k">용어</div><div class="t" style="margin-top: 8px">공고 맞춤 포트폴리오</div><div class="p" style="margin-top: 8px">지원하는 공고의 요건에 맞춰 경험을 골라 구성한 포트폴리오</div></div>
-      </div>
     </div>
   </div>
 </section>
