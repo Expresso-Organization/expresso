@@ -1718,6 +1718,24 @@ svg [data-morph] { transform-box: fill-box; }
 .fx-steps li.done { color: var(--ex-slate-700); }
 .fx-steps li.on { color: var(--ex-ink-900); font-weight: 600; }
 .fx-steps li.on b { background: var(--ex-espresso); border-color: var(--ex-espresso); color: var(--ex-white); }
+
+/* ── 주요 기능 — 실제 조작을 녹화한 DOM을 단계마다 재생합니다 ── */
+.slide.fp.rp { background: #e9edf3; }
+.rp .frame { inset: 0; }
+.rp-top { position: absolute; left: 269px; top: 52px; display: flex; align-items: center; gap: 14px; }
+.rp-top .no { font-family: var(--ex-font-brand); font-weight: 400; font-size: 28px; color: var(--ex-espresso); }
+.rp-top .sec { font-size: 24px; font-weight: 500; color: var(--ex-slate-500); }
+.rp-top b { margin-left: 18px; padding-left: 22px; border-left: 2px solid var(--ex-line-200); font-size: 40px; font-weight: 700; letter-spacing: -.03em; color: var(--ex-ink-900); }
+.rp-screen { position: absolute; left: 269px; top: 132px; width: 1440px; height: 900px; transform: scale(.96); transform-origin: 0 0; border-radius: 16px; overflow: hidden; background: var(--ex-white); box-shadow: 0 30px 80px rgba(22, 34, 58, .18), 0 0 0 1px rgba(22, 34, 58, .06); }
+.rp-host { position: absolute; inset: 0; display: none; }
+.rp-host.on { display: block; }
+.rp-host .replayer-wrapper { position: absolute; inset: 0; }
+.rp-host iframe { border: 0; width: 1440px; height: 900px; display: block; }
+.rp-steps { display: none; }
+.rp-cap { position: absolute; left: 50%; bottom: 66px; transform: translateX(-50%); display: flex; align-items: center; gap: 18px; padding: 16px 30px 16px 18px; border-radius: 999px; background: rgba(22, 34, 58, .92); color: var(--ex-white); box-shadow: 0 14px 40px rgba(22, 34, 58, .3); opacity: 0; transition: opacity 300ms ease; white-space: nowrap; }
+.rp-cap.on { opacity: 1; }
+.rp-cap .n { display: grid; place-items: center; min-width: 64px; height: 40px; padding: 0 12px; border-radius: 999px; background: var(--ex-espresso); font-family: var(--ex-font-brand); font-size: 20px; font-weight: 500; }
+.rp-cap .t { font-size: 30px; font-weight: 600; letter-spacing: -.02em; }
 </style>
 </head>
 
@@ -1777,7 +1795,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fp-cols fp-toc fd-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li>선정 배경</li></ul></div>
-        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li><li>구현 기능</li></ul></div>
+        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li><li>주요 기능 화면</li></ul></div>
         <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 개발 목표</li><li>추천 모델 아키텍처</li><li>추천 모델 학습 데이터</li><li>추천 모델 평가 결과</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
           <ul><li>개발팀 구성 및 역할</li><li>개발 범위</li><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul>
@@ -1965,108 +1983,39 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp fx" data-title="구현 기능 · 커리어 기록 관리" data-kind="화면 확대 단계">
+<section class="slide fp rp" data-title="주요 기능 · 커리어 기록" data-kind="실제 조작 녹화 재생">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>커리어 기록 관리</h2>
-      <p class="sub">경험과 성과를 카테고리별로 쌓아 두는 기록</p>
-    </div>
-    <div class="body">
-      <div class="fx-row">
-        <div class="fx-win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><div class="fx-view"><img class="on" src="assets/최종-발표/v10/01-career.png" alt="커리어 기록 관리 화면" decoding="async"></div></div>
-        <div class="fx-side">
-          <div class="k in in-fade dl-3">구현 기능</div>
-          <ol class="way in in-fade dl-3"><li class="on"><b>1</b>커리어 기록 관리</li><li><b>2</b>채용 공고 추천</li><li><b>3</b>채용 공고 맞춤 포트폴리오 제작</li><li><b>4</b>배포와 방문 분석</li></ol>
-          
-          <ol class="fx-steps in dl-5"><li data-img="0" data-r="0.18,0.19,0.6,0.37"><b>1</b><span>갤러리 · 테이블 · 타임라인 보기와 초안 · 정리됨 · 검증됨 상태 구분</span></li><li data-img="0" data-r="0.19,0.3,0.53,0.33"><b>2</b><span>기록마다 기간 · 기술 · 성과 수치 정리</span></li><li data-img="0" data-r="0.18,0.08,0.46,0.22"><b>3</b><span>성과 수치가 빈 기록에 AI 질문</span></li></ol>
-        </div>
-      </div>
-    </div>
+    <div class="rp-top in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">주요 기능</span><b>커리어 기록</b></div>
+    <div class="rp-screen in in-fade dl-2"></div>
+    <ol class="rp-steps"><li data-ev="career2" data-from="기록 모아 보기" data-to="성과가 빈 기록" data-shift="0">카테고리별로 쌓인 커리어 기록</li><li data-ev="career2" data-from="성과가 빈 기록" data-to="기록 열기" data-shift="0">성과 수치가 빈 기록 거르기</li><li data-ev="career2" data-from="기록 열기" data-to="성과 채우기" data-shift="0">기록의 속성과 본문 확인</li><li data-ev="career2" data-from="성과 채우기" data-to="타임라인" data-shift="0">빈 성과 수치 채우기</li><li data-ev="career2" data-from="타임라인" data-to="" data-shift="0">기간 순 타임라인 보기</li></ol>
+    <div class="rp-cap" aria-live="polite"><span class="n"></span><span class="t"></span></div>
   </div>
 </section>
 
-<section class="slide fp fx" data-title="구현 기능 · 채용 공고 추천" data-kind="화면 확대 단계">
+<section class="slide fp rp" data-title="주요 기능 · 채용 공고 검색" data-kind="실제 조작 녹화 재생">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>채용 공고 추천</h2>
-      <p class="sub">내 기록에 맞는 채용 공고와 요건별 근거</p>
-    </div>
-    <div class="body">
-      <div class="fx-row">
-        <div class="fx-win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><div class="fx-view"><img class="on" src="assets/최종-발표/v10/02-jobs.png" alt="채용 공고 추천 화면" decoding="async"><img src="assets/최종-발표/v10/03-jobdetail.png" alt="채용 공고 추천 화면" decoding="async"></div></div>
-        <div class="fx-side">
-          <div class="k in in-fade dl-3">구현 기능</div>
-          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록 관리</li><li class="on"><b>2</b>채용 공고 추천</li><li><b>3</b>채용 공고 맞춤 포트폴리오 제작</li><li><b>4</b>배포와 방문 분석</li></ol>
-          <div class="mdl in in-fade dl-4"><i class="ph ph-sparkle"></i>채용 공고 추천 모델 · 커리어 기록 추천 모델</div>
-          <ol class="fx-steps in dl-5"><li data-img="0" data-r="0.19,0.2,0.56,0.42"><b>1</b><span>내 기록과의 적합도 점수 순 정렬</span></li><li data-img="0" data-r="0.76,0.45,0.23,0.22"><b>2</b><span>채용 공고가 요구하는데 기록에 없는 경험 안내</span></li><li data-img="1" data-r="0.17,0.5,0.5,0.3"><b>3</b><span>요건마다 근거 기록 연결 · 충족 여부 표시</span></li></ol>
-        </div>
-      </div>
-    </div>
+    <div class="rp-top in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">주요 기능</span><b>채용 공고 검색</b></div>
+    <div class="rp-screen in in-fade dl-2"></div>
+    <ol class="rp-steps"><li data-ev="jobs2" data-from="채용 공고 탐색" data-to="자연어 조건 검색" data-shift="0">내 기록과 가까운 순으로 정렬된 채용 공고</li><li data-ev="jobs2" data-from="자연어 조건 검색" data-to="검색 결과" data-shift="0">원하는 조건을 문장으로 입력</li><li data-ev="jobs2" data-from="검색 결과" data-to="채용 공고 상세" data-shift="0">조건 해석과 일치도 순 결과</li><li data-ev="jobs2" data-from="채용 공고 상세" data-to="" data-shift="0">요건마다 내 근거 기록 연결</li></ol>
+    <div class="rp-cap" aria-live="polite"><span class="n"></span><span class="t"></span></div>
   </div>
 </section>
 
-<section class="slide fp fx" data-title="구현 기능 · 채용 공고 맞춤 포트폴리오 제작 · 분석과 AI 대화" data-kind="화면 확대 단계">
+<section class="slide fp rp" data-title="주요 기능 · 포트폴리오 생성" data-kind="실제 조작 녹화 재생">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>채용 공고 맞춤 포트폴리오 제작</h2>
-      <p class="sub">부족한 요건을 찾아 AI 대화로 채우는 과정</p>
-    </div>
-    <div class="body">
-      <div class="fx-row">
-        <div class="fx-win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><div class="fx-view"><img class="on" src="assets/최종-발표/v10/04-brew1.png" alt="채용 공고 맞춤 포트폴리오 제작 화면" decoding="async"><img src="assets/최종-발표/v10/05-brew2.png" alt="채용 공고 맞춤 포트폴리오 제작 화면" decoding="async"><img src="assets/최종-발표/v10/06-brew3.png" alt="채용 공고 맞춤 포트폴리오 제작 화면" decoding="async"></div></div>
-        <div class="fx-side">
-          <div class="k in in-fade dl-3">구현 기능</div>
-          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록 관리</li><li><b>2</b>채용 공고 추천</li><li class="on"><b>3</b>채용 공고 맞춤 포트폴리오 제작</li><li><b>4</b>배포와 방문 분석</li></ol>
-          
-          <ol class="fx-steps in dl-5"><li data-img="0" data-r="0.17,0.15,0.44,0.45"><b>1</b><span>채용 공고 요건 추출 · 부족한 요건 표시</span></li><li data-img="1" data-r="0.19,0.28,0.53,0.42"><b>2</b><span>요건에 맞춘 커리어 기록 순위 · 최대 10건 선택</span></li><li data-img="2" data-r="0.2,0.6,0.52,0.22"><b>3</b><span>부족한 요건을 근거로 한 AI 질문</span></li></ol>
-        </div>
-      </div>
-    </div>
+    <div class="rp-top in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">주요 기능</span><b>포트폴리오 생성</b></div>
+    <div class="rp-screen in in-fade dl-2"></div>
+    <ol class="rp-steps"><li data-ev="portfolio1" data-from="채용 공고" data-to="공고 분석" data-shift="0">지원할 채용 공고에서 제작 시작</li><li data-ev="portfolio1" data-from="공고 분석" data-to="재료 고르기" data-shift="0">요건 추출과 부족한 요건 표시</li><li data-ev="portfolio1" data-from="재료 고르기" data-to="AI 질문" data-shift="0">요건에 맞춘 커리어 기록 순위</li><li data-ev="portfolio1" data-from="AI 질문" data-to="답이 기록으로" data-shift="0">부족한 요건을 근거로 한 AI 질문과 답</li><li data-ev="portfolio1" data-from="답이 기록으로" data-to="디자인 선택" data-shift="0">답한 내용의 커리어 기록 저장</li><li data-ev="portfolio1" data-from="디자인 선택" data-to="생성" data-shift="0">디자인 시스템 선택</li><li data-ev="portfolio1" data-from="생성" data-to="다듬기" data-shift="0">포트폴리오 생성 · 실제 시간 단축</li><li data-ev="portfolio1" data-from="다듬기" data-to="" data-shift="0">생성된 포트폴리오 확인과 요소 수정</li></ol>
+    <div class="rp-cap" aria-live="polite"><span class="n"></span><span class="t"></span></div>
   </div>
 </section>
 
-<section class="slide fp fx" data-title="구현 기능 · 채용 공고 맞춤 포트폴리오 제작 · 생성과 다듬기" data-kind="화면 확대 단계">
+<section class="slide fp rp" data-title="주요 기능 · 배포와 분석" data-kind="실제 조작 녹화 재생">
   <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>채용 공고 맞춤 포트폴리오 제작</h2>
-      <p class="sub">AI 대화의 답으로 구성하고 생성한 포트폴리오</p>
-    </div>
-    <div class="body">
-      <div class="fx-row">
-        <div class="fx-win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><div class="fx-view"><img class="on" src="assets/최종-발표/v10/07-brew3b.png" alt="채용 공고 맞춤 포트폴리오 제작 화면" decoding="async"><img src="assets/최종-발표/v10/09-brew5.png" alt="채용 공고 맞춤 포트폴리오 제작 화면" decoding="async"><img src="assets/최종-발표/v10/10-edit.png" alt="채용 공고 맞춤 포트폴리오 제작 화면" decoding="async"></div></div>
-        <div class="fx-side">
-          <div class="k in in-fade dl-3">구현 기능</div>
-          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록 관리</li><li><b>2</b>채용 공고 추천</li><li class="on"><b>3</b>채용 공고 맞춤 포트폴리오 제작</li><li><b>4</b>배포와 방문 분석</li></ol>
-          
-          <ol class="fx-steps in dl-5"><li data-img="0" data-r="0.2,0.42,0.5,0.24"><b>1</b><span>답한 내용의 커리어 기록 저장</span></li><li data-img="1" data-r="0.45,0.46,0.5,0.28"><b>2</b><span>답을 반영한 섹션 구성</span></li><li data-img="2" data-r="0.22,0.2,0.55,0.46"><b>3</b><span>생성된 지면 확인 · 요소를 골라 대화로 수정</span></li></ol>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="slide fp fx" data-title="구현 기능 · 배포와 방문 분석" data-kind="화면 확대 단계">
-  <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>배포와 방문 분석</h2>
-      <p class="sub">공개 주소 배포와 방문 기록 분석</p>
-    </div>
-    <div class="body">
-      <div class="fx-row">
-        <div class="fx-win in in-fade dl-3"><div class="bar"><i></i><i></i><i></i></div><div class="fx-view"><img class="on" src="assets/최종-발표/v10/11-deploy2.png" alt="배포와 방문 분석 화면" decoding="async"><img src="assets/최종-발표/v10/12-public.png" alt="배포와 방문 분석 화면" decoding="async"><img src="assets/최종-발표/v10/13-analytics.png" alt="배포와 방문 분석 화면" decoding="async"></div></div>
-        <div class="fx-side">
-          <div class="k in in-fade dl-3">구현 기능</div>
-          <ol class="way in in-fade dl-3"><li><b>1</b>커리어 기록 관리</li><li><b>2</b>채용 공고 추천</li><li><b>3</b>채용 공고 맞춤 포트폴리오 제작</li><li class="on"><b>4</b>배포와 방문 분석</li></ol>
-          
-          <ol class="fx-steps in dl-5"><li data-img="0" data-r="0.19,0.18,0.58,0.2"><b>1</b><span>공개 주소 발급 · 버전 단위 공개</span></li><li data-img="1" data-r="0,0,1,1"><b>2</b><span>채용 공고에 맞춘 공개 포트폴리오</span></li><li data-img="2" data-r="0.19,0.12,0.8,0.15"><b>3</b><span>방문 · 평균 체류 · 끝까지 읽은 비율 집계</span></li><li data-img="2" data-r="0.72,0.27,0.27,0.48"><b>4</b><span>집계 결과의 해설과 개선 제안</span></li></ol>
-        </div>
-      </div>
-    </div>
+    <div class="rp-top in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">주요 기능</span><b>배포와 분석</b></div>
+    <div class="rp-screen in in-fade dl-2"></div>
+    <ol class="rp-steps"><li data-ev="deploy2" data-from="공개 주소와 버전" data-to="방문 분석" data-shift="-2000">공개 주소 발급과 버전 단위 공개</li><li data-ev="public2" data-from="공개 포트폴리오" data-to="" data-shift="0">채용 공고에 맞춘 공개 포트폴리오</li><li data-ev="deploy2" data-from="방문 분석" data-to="해설과 제안" data-shift="0">방문 · 체류 · 끝까지 읽은 비율</li><li data-ev="deploy2" data-from="해설과 제안" data-to="" data-shift="0">집계 해설과 개선 제안 · 유입 경로</li></ol>
+    <div class="rp-cap" aria-live="polite"><span class="n"></span><span class="t"></span></div>
   </div>
 </section>
 
@@ -3261,40 +3210,74 @@ window.deck = new Deck();
 })();
 </script>
 
+
+
 <script>
-/* 구현 기능 장 — 다음 장으로 넘기기 전에 단계를 하나씩 진행합니다.
-   단계마다 화면 캡처의 한 곳(data-r = 가로 · 세로 위치, 너비, 높이의 비율)으로 확대합니다. */
+/* 주요 기능 장 — 실제 조작을 rrweb으로 녹화한 DOM을 단계마다 재생합니다.
+   단계(.rp-steps > li)는 녹화 안의 표시(step) 두 개 사이를 재생하고, 끝 지점에서 멈춥니다.
+   단계를 다 넘긴 뒤의 클릭이 다음 장입니다. */
 (() => {
   const deck = window.deck; if (!deck) return;
-  const VW = 1040, VH = 620, IW = 1040, IH = 650, MAX = 2.6;
-  const items = (s) => [...s.querySelectorAll('.fx-steps > li')];
-  const place = (img, r) => {
-    if (!r) { img.style.transform = ''; return; }
-    const [x, y, w, h] = r.split(',').map(Number);
-    const k = Math.min(MAX, VW / (w * IW), VH / (h * IH));
-    let tx = VW / 2 - (x + w / 2) * IW * k, ty = VH / 2 - (y + h / 2) * IH * k;
-    tx = Math.min(0, Math.max(VW - IW * k, tx)); ty = Math.min(0, Math.max(VH - IH * k, ty));
-    img.style.transform = `translate(${tx}px, ${ty}px) scale(${k})`;
+  const BASE = 'assets/최종-발표/rr/';
+  const load = (src) => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = BASE + 'rrweb.css'; document.head.appendChild(css);
+  let lib = null; const libReady = () => lib || (lib = window.rrweb ? Promise.resolve() : load(BASE + 'rrweb.js'));
+  const data = {}; const need = (k) => data[k] || (data[k] = (window.__rrData && window.__rrData[k]) ? Promise.resolve() : load(BASE + k + '.js'));
+  const players = new Map();
+  const getPlayer = async (slide, key) => {
+    const id = slide.dataset.title + '|' + key;
+    if (players.has(id)) return players.get(id);
+    await libReady(); await need(key);
+    const ev = window.__rrData[key];
+    const host = document.createElement('div'); host.className = 'rp-host'; slide.querySelector('.rp-screen').appendChild(host);
+    const r = new rrweb.Replayer(ev, { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
+    const t0 = ev[0].timestamp; const marks = {};
+    ev.forEach((e) => { if (e.type === 5 && e.data && e.data.tag === 'step') marks[e.data.payload.label] = e.timestamp - t0; });
+    const p = { r, host, marks, end: ev[ev.length - 1].timestamp - t0 };
+    /* 생성된 지면 미리보기는 스크립트로 채워지는 샌드박스 iframe이라 재생기가 비워 둡니다.
+       같은 지면을 다 그려 둔 파일로 대신 띄웁니다. */
+    const fill = () => {
+      const d = host.querySelector('iframe')?.contentDocument; if (!d) return;
+      d.querySelectorAll('iframe[class*="freePagePreview"]:not([data-filled])').forEach((f) => {
+        f.dataset.filled = '1'; f.removeAttribute('sandbox'); f.src = new URL(BASE + key + '-preview.html', location.href).href;
+      });
+    };
+    if (key === 'portfolio1') setInterval(fill, 400);
+    players.set(id, p); return p;
   };
-  const set = (s, n, still) => {
-    const list = items(s); n = Math.max(0, Math.min(n, list.length)); s.dataset.step = n;
-    const cur = n ? list[n - 1] : null; const imgs = [...s.querySelectorAll('.fx-view img')];
-    const at = cur ? Number(cur.dataset.img) : 0;
-    imgs.forEach((img, k) => {
-      if (still) img.style.transition = 'none';
-      img.classList.toggle('on', k === at);
-      if (k === at) place(img, cur ? cur.dataset.r : null);
-      else if (k > at) place(img, null);
-      if (still) { img.offsetWidth; img.style.transition = ''; }
-    });
-    list.forEach((li, k) => { li.classList.toggle('on', k === n - 1); li.classList.toggle('done', k < n - 1); });
+  const items = (s) => [...s.querySelectorAll('.rp-steps > li')];
+  let timer = null, run = 0;
+  const range = (p, li) => {
+    const from = p.marks[li.dataset.from] ?? 0;
+    const to = (li.dataset.to ? (p.marks[li.dataset.to] ?? p.end) : p.end) + Number(li.dataset.shift || 0);
+    return [from, Math.max(from, to)];
+  };
+  const set = async (s, n, mode) => {
+    const list = items(s); n = Math.max(1, Math.min(n, list.length)); s.dataset.step = n;
+    const li = list[n - 1]; const my = ++run; clearTimeout(timer);
+    list.forEach((x, k) => x.classList.toggle('on', k === n - 1));
+    const cap = s.querySelector('.rp-cap'); cap.querySelector('.n').textContent = n + ' / ' + list.length; cap.querySelector('.t').textContent = li.textContent; cap.classList.add('on');
+    const p = await getPlayer(s, li.dataset.ev); if (my !== run) return;
+    s.querySelectorAll('.rp-host').forEach((h) => h.classList.toggle('on', h === p.host));
+    players.forEach((q) => { if (q !== p) q.r.pause(); });
+    const [from, to] = range(p, li);
+    if (mode === 'end') { p.r.pause(to); return; }
+    p.r.play(from);
+    timer = setTimeout(() => { if (my === run) p.r.pause(to); }, to - from);
   };
   const step = (s) => Number(s.dataset.step || 0);
+  const isRp = (s) => s && s.classList.contains('rp');
   const next = deck.next.bind(deck), prev = deck.prev.bind(deck), show = deck.show;
-  deck.next = () => { const s = deck.slides[deck.i]; if (s.classList.contains('fx') && step(s) < items(s).length) return set(s, step(s) + 1); next(); };
-  deck.prev = () => { const s = deck.slides[deck.i]; if (s.classList.contains('fx') && step(s) > 0) return set(s, step(s) - 1); prev(); };
-  deck.show = (n) => { const from = deck.i ?? 0; show(n); const s = deck.slides[deck.i]; if (s && s.classList.contains('fx')) set(s, n < from ? items(s).length : 0, true); };
-  const s0 = deck.slides[deck.i]; if (s0 && s0.classList.contains('fx')) set(s0, 0, true);
+  deck.next = () => { const s = deck.slides[deck.i]; if (isRp(s) && step(s) < items(s).length) return set(s, step(s) + 1); next(); };
+  deck.prev = () => { const s = deck.slides[deck.i]; if (isRp(s) && step(s) > 1) return set(s, step(s) - 1, 'end'); prev(); };
+  deck.show = (n) => {
+    const from = deck.i ?? 0; show(n); const s = deck.slides[deck.i];
+    if (!isRp(s)) { clearTimeout(timer); run++; players.forEach((q) => q.r.pause()); return; }
+    if (n < from) set(s, items(s).length, 'end'); else setTimeout(() => set(s, 1), 450);
+  };
+  const s0 = deck.slides[deck.i]; if (isRp(s0)) set(s0, 1);
+  /* 첫 장이 열리면 재생기와 녹화 자료를 미리 받아 둡니다. */
+  setTimeout(() => { libReady(); ['career2', 'jobs2', 'portfolio1', 'deploy2', 'public2'].forEach((k) => need(k).catch(() => {})); }, 1500);
 })();
 </script>
 
@@ -3308,11 +3291,12 @@ window.deck = new Deck();
     /* 컨트롤러가 실행 중에 남긴 것을 걷어냅니다 — 무대 축소 transform,
        활성 장 표시, 자동으로 만든 목록. 도구는 이걸 알 수 없습니다. */
     beforeSave(doc) {
-      /* 구현 기능 장의 단계 진행 상태(확대 · 표시)를 걷어냅니다. */
-      doc.querySelectorAll('.slide.fx').forEach((s) => {
+      /* 주요 기능 장의 재생 화면(녹화 재생기가 만든 요소)과 단계 상태를 걷어냅니다. */
+      doc.querySelectorAll('.slide.rp').forEach((s) => {
         s.removeAttribute('data-step');
-        s.querySelectorAll('.fx-view img').forEach((img, k) => { img.removeAttribute('style'); img.classList.toggle('on', k === 0); });
-        s.querySelectorAll('.fx-steps > li').forEach((li) => li.classList.remove('on', 'done'));
+        s.querySelectorAll('.rp-screen').forEach((el) => { el.innerHTML = ''; });
+        s.querySelectorAll('.rp-steps > li').forEach((li) => li.classList.remove('on'));
+        s.querySelectorAll('.rp-cap .n, .rp-cap .t').forEach((el) => { el.textContent = ''; });
       });
       doc.querySelectorAll('.slide.active').forEach((el) => el.classList.remove('active'));
       doc.querySelector('#deckStage')?.removeAttribute('style');
