@@ -855,6 +855,13 @@ svg [data-morph] { transform-box: fill-box; }
 .fp-arch .side ul { list-style: none; display: grid; gap: 22px; margin-top: 24px; }
 .fp-arch .side li { font-size: 32px; font-weight: 500; letter-spacing: -.02em; }
 .fp-arch .side li small { display: block; font-size: 24px; font-weight: 400; color: var(--ex-slate-500); margin-top: 2px; }
+/* AI 모델 두 칸 — 9쪽 두 패널과 같은 비율로 놓아, 카메라가 이 자리로 들어가면 그대로 9쪽이 됩니다. */
+.fp-arch .side .ai { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; height: 198px; }
+.fp-arch .side .ai .fp-field { padding: 0 24px; border-radius: 14px; display: flex; flex-direction: column; justify-content: center; }
+.fp-arch .side .ai .k { font-size: 21px; }
+.fp-arch .side .ai .t { margin-top: 8px; font-size: 38px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; }
+.fp-arch .side .ai .t.brand { font-family: var(--ex-font-brand); font-weight: 500; }
+.fp-arch .side .ai small { margin-top: 8px; font-size: 22px; color: var(--ex-slate-500); letter-spacing: -.02em; white-space: nowrap; }
 .fp-state { display: inline-block; margin-top: 14px; font-size: 22px; font-weight: 600; color: #8A5A12; border: 1.5px dashed var(--fp-own-line); border-radius: 10px; padding: 6px 14px; }
 
 /* ── 대비 — 두 면 ─────────────────────────────────────── */
@@ -1639,7 +1646,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>시스템 구성</h2>
-      <p class="sub">클라이언트 · API 서버 · Worker · 저장소 · 외부 서비스</p>
+      <p class="sub">클라이언트 · API 서버 · Worker · 저장소 · 외부 서비스 · AI 모델</p>
     </div>
     <div class="body">
       <div class="fp-arch">
@@ -1663,13 +1670,11 @@ svg [data-morph] { transform-box: fill-box; }
             <ul>
               <li>Google OAuth<small>로그인</small></li>
               <li>ATS 채용 보드 · 고용24<small>채용 공고 수집</small></li>
-              <li>Claude<small>공고 분석 · 인터뷰 · 포트폴리오 생성</small></li>
             </ul>
           </div>
-          <div class="fp-field own in dl-7">
-            <div class="k" style="color: #8A5A12">추천 모델</div>
-            <div class="t" style="font-size: 34px; margin-top: 10px">Bi-Encoder+MLP<br>Cross-Encoder</div>
-            
+          <div class="ai">
+            <div class="fp-field ext in dl-7" data-morph="ai-ext"><div class="k" style="color: #5E4E96">외부 LLM</div><div class="t brand">Claude</div><small>분석 · 대화 · 생성</small></div>
+            <div class="fp-field own in dl-7" data-morph="ai-own"><div class="k" style="color: #8A5A12">자체 학습 모델</div><div class="t">추천 모델</div><small>공고 · 기록 순위</small></div>
           </div>
         </div>
       </div>
@@ -1677,7 +1682,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="AI 모델 구성" data-kind="대비">
+<section class="slide fp" data-title="AI 모델 구성" data-kind="대비" data-cam>
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -1686,7 +1691,7 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="body">
       <div class="fp-two">
-        <div class="fp-field ext in dl-3">
+        <div class="fp-field ext in dl-3" data-morph="ai-ext">
           <div class="k" style="color: #5E4E96">외부 LLM</div>
           <div class="who"><span class="brand">Claude</span><small>Opus · Sonnet · Haiku</small></div>
           <ul class="fp-use">
@@ -1695,7 +1700,7 @@ svg [data-morph] { transform-box: fill-box; }
             <li><div class="fp-ico"><i class="ph ph-palette"></i></div><div><b>포트폴리오 생성</b><span>레시피 · 문장 · 지면 생성</span></div></li>
           </ul>
         </div>
-        <div class="fp-field own in dl-4">
+        <div class="fp-field own in dl-4" data-morph="ai-own">
           <div class="k" style="color: #8A5A12">자체 학습 모델</div>
           <div class="who">추천 모델<small>교사 LLM 판정 학습</small></div>
           
@@ -2368,9 +2373,22 @@ window.deck = new Deck();
     return map;
   };
 
-  function glide(from, to) {
+  /* 등장 애니메이션(.in)이 걸린 조각은 첫 순간에 20px 내려가 있습니다. 카메라 전환은
+     두 장의 조각이 끝까지 겹쳐야 하므로, 제 transform 을 걷어 낸 **제자리**를 잽니다. */
+  const rest = (n) => {
+    const r = n.getBoundingClientRect();
+    const t = getComputedStyle(n).transform;
+    if (!t || t === 'none') return r;
+    const m = new DOMMatrixReadOnly(t);
+    const f = STAGE.getBoundingClientRect().width / 1920;
+    const w = r.width / (m.a || 1), h = r.height / (m.d || 1);
+    const cx = r.left + r.width / 2 - m.m41 * f, cy = r.top + r.height / 2 - m.m42 * f;
+    return { left: cx - w / 2, top: cy - h / 2, width: w, height: h };
+  };
+
+  function glide(from, to, fixed) {
     const a = from.getBoundingClientRect();
-    const b = to.getBoundingClientRect();
+    const b = fixed ? rest(to) : to.getBoundingClientRect();
     if (!a.width || !b.width) return;
     /* 가운데를 맞춰 옮기고 크기 차이는 배율로 메웁니다 — 상자에서 원으로
        바뀌어도 같은 것이 자라거나 줄어든 것으로 보입니다. */
@@ -2384,7 +2402,7 @@ window.deck = new Deck();
        배율로 나눠야 이동 거리가 모자라지 않습니다. */
     const m = to.getScreenCTM ? to.getScreenCTM() : null;
     const k = m && m.a ? m.a : (document.getElementById('deckStage').getBoundingClientRect().width / 1920);
-    const ms = Math.min(1150, 720 + Math.hypot(dx, dy) / k * 0.3);
+    const ms = fixed || Math.min(1150, 720 + Math.hypot(dx, dy) / k * 0.3);
     /* 두 조각을 겹쳐 흐립니다 — 앞엣것은 제자리에서 사라지고 뒤엣것은 떠나면서
        나타납니다. 모양이 서로 다를 때 이 겹침이 그 차이를 덮습니다. */
     running.push(from.animate([{ opacity: 1 }, { opacity: 0 }],
@@ -2451,7 +2469,16 @@ window.deck = new Deck();
       for (let i = pairs.length - 1; i >= 0; i -= 1) {
         if (nodes.some((n) => n !== pairs[i][1] && n.contains(pairs[i][1]))) pairs.splice(i, 1);
       }
-      if (pairs.length) {
+      /* `data-cam` 이 붙은 장으로 들어가거나 그 장에서 바로 앞 장으로 돌아갈 때는
+         나머지를 옆으로 빼지 않고 **카메라가 움직입니다** — 앞 장 지면 전체가 조각과
+         같은 배율 · 같은 거리로 움직여, 조각이 지면에 붙은 채 다가오거나 물러납니다. */
+      const cam = pairs.length && (back
+        ? was.dataset.cam !== undefined && now.nextElementSibling === was
+        : now.dataset.cam !== undefined && was.nextElementSibling === now);
+      if (cam) {
+        camera(was, pairs[0], CAM_MS);
+        pairs.forEach(([prev, node]) => glide(prev, node, CAM_MS));
+      } else if (pairs.length) {
         sweep(was, pairs.map((p) => p[0]), now, pairs.map((p) => p[1]), way);
         pairs.forEach(([prev, node]) => glide(prev, node));
       }
@@ -2468,6 +2495,33 @@ window.deck = new Deck();
     if (!to || to === from) return;
     from ? cross(from, to) : enter(to);
   };
+
+  /* 카메라 이동 — 앞 장의 지면을 통째로 움직입니다. 기준 조각의 가운데를 축으로
+     배율을 바꾸고, 그 가운데가 다음 장 조각의 가운데로 가도록 옮깁니다. glide 와
+     같은 곡선 · 같은 시간이라 두 장의 조각이 처음부터 끝까지 겹칩니다. */
+  const CAM_MS = 1150;
+  function camera(oldSlide, [prev, node], ms) {
+    const frame = oldSlide.querySelector('.frame') || oldSlide;
+    const a = prev.getBoundingClientRect();
+    const b = rest(node);
+    const fr = frame.getBoundingClientRect();
+    if (!a.width || !b.width) return;
+    const f = STAGE.getBoundingClientRect().width / 1920;
+    const s = b.width / a.width;
+    const cx = (a.left + a.width / 2 - fr.left) / f;
+    const cy = (a.top + a.height / 2 - fr.top) / f;
+    const tx = ((b.left + b.width / 2) - (a.left + a.width / 2)) / f;
+    const ty = ((b.top + b.height / 2) - (a.top + a.height / 2)) / f;
+    const at = (e, k) => `translate(${tx * e}px, ${ty * e}px) translate(${cx}px, ${cy}px) scale(${k}) translate(${-cx}px, ${-cy}px)`;
+    running.push(frame.animate(
+      [{ transformOrigin: '0 0', transform: at(0, 1) }, { transformOrigin: '0 0', transform: at(1, s) }],
+      { duration: ms, easing: GLIDE, fill: 'forwards' },
+    ));
+    running.push(frame.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: Math.round(ms * .5), delay: Math.round(ms * .08), easing: 'linear', fill: 'forwards' },
+    ));
+  }
 
   function sweep(oldSlide, oldNodes, newSlide, newNodes, way) {
     others(oldSlide, oldNodes).forEach((el) => {
