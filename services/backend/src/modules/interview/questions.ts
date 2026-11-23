@@ -25,8 +25,17 @@ export function hasMetric(value: string): boolean {
   return /\d|%|퍼센트|배|건|명|회|초|분|시간/.test(value);
 }
 
-function requirementQuestion(label: string, coverage: "partial" | "missing", variant: number) {
+function requirementQuestion(label: string, coverage: "covered" | "partial" | "missing", variant: number) {
   const subject = label.slice(0, 70);
+  // 충족한 요건도 묻는다 — 포트폴리오에 채울 맥락(상황 · 역할 · 판단)을 사용자에게서 받는다.
+  if (coverage === "covered") {
+    const covered = [
+      `${subject}을 보여준 경험에서 어떤 상황이었고 본인은 어떤 역할을 맡았나요?`,
+      `${subject} 경험에서 본인이 직접 내린 판단과 그 이유는 무엇인가요?`,
+      `${subject}와 관련해 포트폴리오에서 가장 강조하고 싶은 장면은 무엇인가요?`,
+    ];
+    return covered[variant % covered.length]!;
+  }
   const templates = coverage === "missing"
     ? [
         `${subject}와 관련해 직접 맡은 행동은 무엇인가요?`,
@@ -41,8 +50,16 @@ function requirementQuestion(label: string, coverage: "partial" | "missing", var
   return templates[variant % templates.length]!;
 }
 
-function recordGapQuestion(title: string, variant: number) {
+function recordGapQuestion(title: string, gap: "metric" | "context", variant: number) {
   const subject = title.slice(0, 80);
+  if (gap === "context") {
+    const context = [
+      `${subject}는 어떤 상황에서 시작됐고 본인은 어떤 역할을 맡았나요?`,
+      `${subject}에서 본인이 내린 핵심 판단과 그 이유는 무엇인가요?`,
+      `${subject}에서 포트폴리오에 꼭 담고 싶은 장면은 무엇인가요?`,
+    ];
+    return context[variant % context.length]!;
+  }
   const templates = [
     `${subject}에서 측정한 결과는 무엇인가요?`,
     `${subject}의 변화를 보여주는 수치는 무엇인가요?`,
@@ -57,7 +74,7 @@ export function questionTextForBasis(
 ): string {
   return basis.type === "requirement"
     ? requirementQuestion(basis.evidence, basis.coverage, variant)
-    : recordGapQuestion(basis.evidence, variant);
+    : recordGapQuestion(basis.evidence, basis.gap, variant);
 }
 
 export function generateQuestionDrafts(
@@ -65,7 +82,7 @@ export function generateQuestionDrafts(
   selectedRecords: QuestionRecord[],
 ): QuestionDraft[] {
   const drafts: QuestionDraft[] = [];
-  for (const coverage of ["missing", "partial"] as const) {
+  for (const coverage of ["missing", "partial", "covered"] as const) {
     for (const requirement of requirements.filter((item) => item.coverage === coverage).slice(0, 2)) {
       const basis: InterviewQuestionBasis = {
         type: "requirement",
@@ -81,11 +98,13 @@ export function generateQuestionDrafts(
       });
     }
   }
-  for (const record of selectedRecords.filter((item) => !hasMetric(item.text)).slice(0, 2)) {
+  // 수치가 빠진 기록을 먼저, 수치가 있는 기록은 맥락을 묻는다.
+  const ordered = [...selectedRecords.filter((item) => !hasMetric(item.text)), ...selectedRecords.filter((item) => hasMetric(item.text))];
+  for (const record of ordered.slice(0, 2)) {
     const basis: InterviewQuestionBasis = {
       type: "record_gap",
       recordId: record.id,
-      gap: "metric",
+      gap: hasMetric(record.text) ? "context" : "metric",
       evidence: record.title,
     };
     drafts.push({

@@ -79,10 +79,10 @@ export class InterviewService implements InterviewApi {
     const context: QuestionContext = {
       userId,
       options: [
-        ...requirementRows.filter(({ coverage }) => coverage !== "covered").map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage as "missing" | "partial", evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : "일부만"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
+        ...requirementRows.map((row) => ({ basis: { type: "requirement" as const, requirementId: row._id, coverage: row.coverage, evidence: row.quote }, label: `[공고 요건 · ${row.coverage === "missing" ? "안 채움" : row.coverage === "partial" ? "일부만" : "충족 · 맥락"}] ${row.label}`, detail: row.quote, mentions: posting ? countMentions(row.label, posting.descriptionRaw) : null })),
         // 제목이 빈 기록도 근거가 된다. 계약은 근거 글을 1자 이상 받으므로 제목 대신 이름을 둔다 — 빈 제목이 그대로 가면
         // 질문 근거 목록 · 질문 생성이 계약 검사에서 500이 났다(운영 2026-11-10 · 11-13 `interview-bases`).
-        ...orderedRecords.filter((record) => !hasMetric(recordText(record))).map((record) => { const title = record.title.trim() || UNTITLED_RECORD; return { basis: { type: "record_gap" as const, recordId: record._id, gap: "metric" as const, evidence: title }, label: `[기록 · 수치 없음] ${title}`, detail: record.bodyMd, mentions: null }; }),
+        ...orderedRecords.map((record) => { const metric = hasMetric(recordText(record)); const title = record.title.trim() || UNTITLED_RECORD; return { basis: { type: "record_gap" as const, recordId: record._id, gap: metric ? "context" as const : "metric" as const, evidence: title }, label: `[기록 · ${metric ? "맥락" : "수치 없음"}] ${title}`, detail: record.bodyMd, mentions: null }; }),
       ],
       company: company ? { name: company.name, industry: company.industry ?? null, toneSummary: company.toneSummary ?? null } : null,
       jobTitle: posting?.title ?? null,
@@ -96,7 +96,7 @@ export class InterviewService implements InterviewApi {
     const lap = (name: string) => { const now = Date.now(); timing[name] = now - mark; mark = now; };
     const { context, requirements, records, recordText } = await this.#questionOptions(userId, brewId);
     lap("optionsMs");
-    if (context.options.length < 3) throw new InterviewError(409, "at least three grounded question bases are required");
+    if (context.options.length === 0) throw new InterviewError(409, "at least one grounded question basis is required");
     if (this.writer) {
       await this.consent?.require(userId, "question_draft");
       lap("consentMs");
