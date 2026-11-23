@@ -1569,6 +1569,28 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-eval.duo .dot { stroke: var(--ex-surface-50); stroke-width: 3; }
 .fd-eval.duo line.rnd { stroke: var(--ex-slate-500); stroke-width: 2; stroke-dasharray: 8 7; }
 .fd-eval.duo text.rnd { font-size: 22px; fill: var(--ex-slate-500); }
+.fd-eval.duo .g.sm { font-size: 25px; }
+.fd-eval.duo .bar.ref { fill: #F3DCCB; stroke: #9A4030; stroke-width: 2; stroke-dasharray: 9 7; }
+.fd-eval.duo .v.ref { fill: #9A4030; }
+/* 추천 모델 개발 목표 — 같은 입력에서 갈라지는 두 경로. 쓰지 않은 경로는 점선과 회색, 쓰는 경로는 실선 */
+.fd-goal .k { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; fill: var(--ex-espresso); }
+.fd-goal .t { font-family: var(--ex-font-ui); font-size: 34px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+.fd-goal .t.off { fill: var(--ex-slate-500); }
+.fd-goal .d { font-family: var(--ex-font-ui); font-size: 24px; letter-spacing: -.02em; fill: #53657D; }
+.fd-goal .lb { font-family: var(--ex-font-ui); font-size: 24px; letter-spacing: -.02em; fill: var(--ex-slate-500); }
+.fd-goal .v { font-family: var(--ex-font-brand); font-size: 50px; font-weight: 300; letter-spacing: -.03em; }
+.fd-goal .v.off { fill: var(--ex-slate-400); }
+.fd-goal .v.on { fill: #9A4030; }
+.fd-goal .o { font-family: var(--ex-font-brand); font-size: 40px; font-weight: 300; letter-spacing: -.03em; fill: #478670; }
+.fd-goal .tg { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 500; fill: var(--ex-slate-500); }
+.fd-goal .pill { fill: var(--ex-white); stroke: #D9E3EF; stroke-width: 1.6; }
+.fd-goal .pn.off { fill: none; stroke: var(--ex-slate-300); stroke-width: 2; stroke-dasharray: 10 8; }
+.fd-goal .pn.on { fill: var(--ex-white); stroke: #9A4030; stroke-width: 2; }
+.fd-goal .tag { fill: var(--ex-tint-50); }
+.fd-goal .out { fill: #ECF5F1; stroke: #CCE2D7; stroke-width: 1.6; }
+.fd-goal .way { fill: none; stroke-width: 2; }
+.fd-goal .way.off { stroke: #8596AF; stroke-dasharray: 8 7; }
+.fd-goal .way.on { stroke: #9A4030; }
 
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
@@ -1705,7 +1727,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fp-cols fp-toc fd-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li>선정 배경</li></ul></div>
         <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li><li>구현 화면</li></ul></div>
-        <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 학습과 성능</li><li>추천 모델 평가 결과</li><li>추천 모델 아키텍처</li></ul></div>
+        <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 개발 목표</li><li>추천 모델 아키텍처</li><li>추천 모델 학습 데이터</li><li>추천 모델 평가 결과</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
           <ul><li>개발팀 구성 및 역할</li><li>개발 범위</li><li>1.0 설계 범위 완성</li><li>성능 지표</li></ul>
         </div>
@@ -2078,130 +2100,46 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="추천 모델 학습과 성능" data-kind="학습 흐름과 요약 값">
+<section class="slide fp" data-title="추천 모델 개발 목표" data-kind="두 경로 대비">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
     <div class="head in dl-2">
-      <h2>추천 모델 학습과 성능</h2>
-      <p class="sub">교사 LLM 판정으로 학습한 두 모델의 순위 품질</p>
+      <h2>추천 모델 개발 목표</h2>
+      <p class="sub">외부 LLM 판정을 대신하는 자체 순위 모델</p>
     </div>
     <div class="body">
-      <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨과 요건별 근거를 만들고, 그것으로 경력 근거 헤드와 채용 공고 순위 결합 모델을 학습시킨 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236에서 0.589로 2.5배, 요건별 근거 기록의 Hit@3는 88.7%">
+      <svg class="fd-goal" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="추천 요청 한 번에 프로필 한 명과 공개 채용 공고 729건의 연관성을 판정해야 한다. 요청마다 외부 LLM으로 판정하면 약 170만 토큰, 약 30초, 약 0.17달러가 드는 것으로 추정된다. 자체 모델은 외부 호출 없이 0.94초에 순위를 계산해 채용 공고 순위 상위 10건과 요건별 근거 기록 상위 3건을 낸다. 외부 LLM 판정은 학습 데이터를 만들 때만 쓴다">
         <defs>
-          <marker id="fdd-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker>
-          <marker id="fdd-up" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#9A4030" stroke-width="1.8"></path></marker>
-          <pattern id="fdd-hatch" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: var(--ex-tint-100)"></rect></pattern>
-          <pattern id="fdd-hatch-own" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: #F3DCCB"></rect></pattern>
+          <marker id="fdg-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker>
+          <marker id="fdg-own" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#9A4030" stroke-width="1.8"></path></marker>
         </defs>
-
-        <!-- 윗줄: 라벨을 만드는 쪽 (왼쪽 → 오른쪽) -->
         <g class="in dl-3">
-          <text class="k" x="0" y="22">입력</text>
-          <rect x="0" y="42" width="260" height="96" rx="48" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="t" x="130" y="100" text-anchor="middle">채용 공고</text>
-          <rect x="0" y="156" width="260" height="96" rx="48" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="t" x="130" y="214" text-anchor="middle">합성 프로필</text>
+          <text class="k" x="0" y="206">추천 요청 한 번</text>
+          <rect class="pill" x="0" y="226" width="308" height="88" rx="44"></rect><text class="t" x="154" y="281" text-anchor="middle">프로필 한 명</text>
+          <rect class="pill" x="0" y="336" width="308" height="88" rx="44"></rect><text class="t" x="154" y="391" text-anchor="middle">채용 공고 729건</text>
         </g>
         <g class="in dl-4">
-          <path d="M272 90H292V128H310" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><path d="M272 204H292V166H310" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
-          <text class="k" x="322" y="22">교사 판정</text>
-          <rect x="322" y="42" width="320" height="210" rx="20" style="fill:#FFF0E1;stroke:#E7CEB0;stroke-width:1.6"></rect>
-          <text class="t" x="352" y="140" style="font-size:38px">교사 LLM</text><text class="d" x="352" y="186">요구사항별 충족 수준 판정</text>
+          <path class="way off" d="M320 300H350V165H380" marker-end="url(#fdg-tip)"></path>
+          <rect class="pn off" x="392" y="40" width="860" height="250" rx="20"></rect>
+          <text class="t off" x="428" y="98">요청마다 외부 LLM 판정</text>
+          <rect class="tag" x="1128" y="64" width="92" height="46" rx="23"></rect><text class="tg" x="1174" y="95" text-anchor="middle">추정</text>
+          <text class="lb" x="428" y="166">외부 호출</text><text class="v off" x="428" y="232">약 170만 토큰</text><text class="lb" x="756" y="166">응답 시간</text><text class="v off" x="756" y="232">약 30초</text><text class="lb" x="1000" y="166">요청당 비용</text><text class="v off" x="1000" y="232">약 0.17달러</text>
         </g>
         <g class="in dl-5">
-          <path d="M654 147H690" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
-          <text class="k" x="702" y="22">루브릭 점수화</text>
-          <rect x="702" y="42" width="600" height="210" rx="20" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect>
-          <text class="d" x="730" y="92">요건별 가중치</text>
-          <rect x="730" y="114" width="246" height="58" rx="12" style="fill:#9A623B"></rect>
-          <rect x="980" y="114" width="217" height="58" rx="12" style="fill:#C99A6C"></rect>
-          <rect x="1201" y="114" width="73" height="58" rx="12" style="fill:#EBD5B8"></rect>
-          <text class="w" x="748" y="152">45%</text><text class="w" x="998" y="152">40%</text><text class="w dk" x="1237" y="152" text-anchor="middle">15%</text>
-          <text class="c" x="730" y="212">필수요건</text><text class="c" x="980" y="212">담당업무</text><text class="c" x="1274" y="212" text-anchor="end">우대요건</text>
+          <path class="way on" d="M320 350H350V485H380" marker-end="url(#fdg-own)"></path>
+          <rect class="pn on" x="392" y="360" width="860" height="250" rx="20"></rect>
+          <text class="t" x="428" y="418">자체 모델 순위 계산</text>
+          <rect class="tag" x="826" y="384" width="394" height="46" rx="23"></rect><text class="tg" x="1023" y="415" text-anchor="middle">운영 서버 시험 구성 · CPU 한 코어</text>
+          <text class="lb" x="428" y="486">외부 호출</text><text class="v on" x="428" y="552">없음</text><text class="lb" x="756" y="486">응답 시간</text><text class="v on" x="756" y="552">0.94초</text><text class="lb" x="1000" y="486">요청당 비용</text><text class="v on" x="1000" y="552">없음</text>
         </g>
         <g class="in dl-6">
-          <path d="M1314 147H1350" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
-          <text class="k" x="1362" y="22">적합도 라벨</text>
-          <rect x="1362" y="42" width="350" height="210" rx="20" style="fill:#ECF5F1;stroke:#CCE2D7;stroke-width:1.6"></rect>
-          <text class="big" x="1537" y="152" text-anchor="middle">0–100</text><text class="d" x="1537" y="206" text-anchor="middle">+ 요건별 근거 기록</text>
+          <path class="way on" d="M822 292V348" marker-end="url(#fdg-own)"></path>
+          <text class="k" x="842" y="332">외부 LLM 판정은 학습 데이터 생성에만 사용</text>
         </g>
-
-        <!-- 아랫줄: 라벨로 배우는 쪽 (오른쪽 → 왼쪽) -->
         <g class="in dl-7">
-          <path d="M1537 264V338" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1556" y="308">학습</text>
-          <rect x="1040" y="350" width="671" height="296" rx="20" style="fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6"></rect>
-          <text class="t" x="1070" y="400" style="font-size:30px">추천 모델</text><text class="d" x="1682" y="398" text-anchor="end" style="fill:#9A4030">자체 학습 모델</text>
-          <rect x="1070" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
-          <text class="t" x="1094" y="504" style="font-size:29px">경력 근거 헤드</text><text class="d" x="1094" y="546">요건 × 기록 연결 점수</text><text class="d" x="1094" y="584" style="fill:#9A4030">모델 B</text>
-          <path d="M1366 523H1386" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
-          <rect x="1392" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
-          <text class="t" x="1416" y="504" style="font-size:27px">채용 공고 순위 결합</text><text class="d" x="1416" y="546">채용 공고 적합도 점수</text><text class="d" x="1416" y="584" style="fill:#9A4030">모델 A</text>
-        </g>
-        <g class="in dl-8">
-          <path d="M1028 500H976" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1002" y="480" text-anchor="middle">평가</text>
-          <text class="mk" x="0" y="420">채용 공고 순위 · NDCG@10</text>
-          <text class="hero" x="0" y="506" style="font-size:66px"><tspan style="fill: var(--ex-slate-400)">0.236</tspan><tspan dx="16" style="fill: var(--ex-slate-400); font-size:44px">→</tspan><tspan dx="16">0.589</tspan></text>
-          <text class="d" x="0" y="550">파일럿 MLP → 추천 모델</text>
-          <line x1="492" y1="392" x2="492" y2="566" style="stroke: var(--ex-line-200); stroke-width: 1.5"></line>
-          <text class="mk" x="524" y="420">요건별 근거 기록 · Hit@3</text>
-          <text class="hero" x="524" y="506" style="font-size:66px">88.7%</text>
-          <text class="d" x="524" y="550">근거 기록을 상위 3건 안에 찾은 요건</text>
-          <text class="ax" x="0" y="626" style="font-size:19px">한국어 평가 · 프로필 40명 × 채용 공고 32건</text>
-        </g>
-      </svg>
-    </div>
-  </div>
-</section>
-
-<section class="slide fp" data-title="추천 모델 평가 결과" data-kind="막대 차트와 선 그래프">
-  <div class="frame">
-    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
-    <div class="head in dl-2">
-      <h2>추천 모델 평가 결과</h2>
-      <p class="sub">한국어 평가 · 프로필 40명 × 채용 공고 32건 · 1,280쌍 전부 채점</p>
-    </div>
-    <div class="body">
-      <svg class="fd-eval duo" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="한국어 평가에서 파일럿 MLP와 추천 모델을 비교한 결과. 채용 공고 순위는 NDCG@10 0.236에서 0.589, 순서 일치율 0.497에서 0.672. 추천 순위 1위에서 4위의 평균 정답 점수는 추천 모델 15.2점, 파일럿 MLP 3.6점이고 전체 평균은 7.8점. 요건별 근거 기록은 정답 근거 기록을 상위 1건에서 61.9퍼센트, 상위 2건 안에서 80.6퍼센트, 상위 3건 안에서 88.7퍼센트 찾았고 Recall@3는 74.4퍼센트, MRR@3는 0.740">
-        <!-- 채용 공고 순위 · 지표 -->
-        <g class="in dl-3">
-          <text class="t" x="0" y="34">채용 공고 순위</text>
-          <rect class="bar base" x="790" y="12" width="24" height="24" rx="6"></rect><text class="e" x="824" y="32">파일럿 MLP</text>
-          <rect class="bar own" x="968" y="12" width="24" height="24" rx="6"></rect><text class="e" x="1002" y="32">추천 모델</text>
-          <text class="g" x="0" y="92">순위 품질 지표</text>
-          <g class="grid"><line x1="64" y1="130" x2="500" y2="130"></line><line x1="64" y1="315" x2="268" y2="315"></line></g>
-          <line class="base0" x1="64" y1="500" x2="500" y2="500"></line>
-          <text class="ax" x="50" y="138" text-anchor="end">1.0</text><text class="ax" x="50" y="323" text-anchor="end">0.5</text><text class="ax" x="50" y="508" text-anchor="end">0</text>
-          <rect class="bar base" x="92" y="412.7" width="84" height="87.3" rx="8"></rect><text class="v base" x="134.0" y="400.7" text-anchor="middle">0.236</text><rect class="bar own" x="184" y="282.1" width="84" height="217.9" rx="8"></rect><text class="v own" x="226.0" y="270.1" text-anchor="middle">0.589</text>
-          <text class="g" x="180" y="548" text-anchor="middle">NDCG@10</text><text class="e" x="180" y="584" text-anchor="middle">상위 10건의</text><text class="e" x="180" y="614" text-anchor="middle">순서 품질</text>
-          <rect class="bar base" x="300" y="316.1" width="84" height="183.9" rx="8"></rect><text class="v base" x="342.0" y="304.1" text-anchor="middle">0.497</text><rect class="bar own" x="392" y="251.4" width="84" height="248.6" rx="8"></rect><text class="v own" x="434.0" y="239.4" text-anchor="middle">0.672</text>
-          <line class="rnd" x1="280" y1="315" x2="490" y2="315"></line><text class="e rnd" x="498" y="323">무작위</text>
-          <text class="g" x="388" y="548" text-anchor="middle">순서 일치율</text><text class="e" x="388" y="584" text-anchor="middle">두 건 중 더 맞는 쪽을</text><text class="e" x="388" y="614" text-anchor="middle">앞에 둔 비율</text>
-        </g>
-        <!-- 채용 공고 순위 · 순위별 평균 정답 점수 -->
-        <g class="in dl-4">
-          <text class="g" x="640" y="92">추천 순위별 평균 정답 점수</text>
-          <g class="grid"><line x1="640" y1="130" x2="1100" y2="130"></line><line x1="640" y1="315" x2="1100" y2="315"></line></g>
-          <line class="base0" x1="640" y1="500" x2="1100" y2="500"></line>
-          <text class="ax" x="626" y="138" text-anchor="end">20</text><text class="ax" x="626" y="323" text-anchor="end">10</text><text class="ax" x="626" y="508" text-anchor="end">0</text>
-          <line class="rnd" x1="640" y1="355.7" x2="1100" y2="355.7"></line>
-          <polyline class="ln base" points="668.8,434.2 726.2,347.5 783.8,334.3 841.2,306.9 898.8,368.6 956.2,374.8 1013.8,316.2 1071.2,362.5"></polyline><circle class="dot base" cx="668.8" cy="434.2" r="7"></circle><circle class="dot base" cx="726.2" cy="347.5" r="7"></circle><circle class="dot base" cx="783.8" cy="334.3" r="7"></circle><circle class="dot base" cx="841.2" cy="306.9" r="7"></circle><circle class="dot base" cx="898.8" cy="368.6" r="7"></circle><circle class="dot base" cx="956.2" cy="374.8" r="7"></circle><circle class="dot base" cx="1013.8" cy="316.2" r="7"></circle><circle class="dot base" cx="1071.2" cy="362.5" r="7"></circle>
-          <polyline class="ln own" points="668.8,219.5 726.2,267.2 783.8,351.7 841.2,364.6 898.8,379.7 956.2,439.1 1013.8,409.8 1071.2,413.1"></polyline><circle class="dot own" cx="668.8" cy="219.5" r="7"></circle><circle class="dot own" cx="726.2" cy="267.2" r="7"></circle><circle class="dot own" cx="783.8" cy="351.7" r="7"></circle><circle class="dot own" cx="841.2" cy="364.6" r="7"></circle><circle class="dot own" cx="898.8" cy="379.7" r="7"></circle><circle class="dot own" cx="956.2" cy="439.1" r="7"></circle><circle class="dot own" cx="1013.8" cy="409.8" r="7"></circle><circle class="dot own" cx="1071.2" cy="413.1" r="7"></circle>
-          <text class="v own" x="686.8" y="207.5">15.2점</text>
-          <text class="v base" x="686.8" y="474.2">3.6점</text>
-          <text class="ax" x="668.8" y="534" text-anchor="middle">1–4</text><text class="ax" x="783.8" y="534" text-anchor="middle">9–12</text><text class="ax" x="898.8" y="534" text-anchor="middle">17–20</text><text class="ax" x="1013.8" y="534" text-anchor="middle">25–28</text>
-          <text class="e" x="870.0" y="584" text-anchor="middle">추천 순위(네 건씩 묶음) · 점선은 전체 평균 7.8점</text>
-        </g>
-        <line class="div" x1="1136" y1="6" x2="1136" y2="600"></line>
-        <!-- 요건별 근거 기록 -->
-        <g class="in dl-5">
-          <text class="t" x="1176" y="34">요건별 근거 기록</text>
-          <text class="g" x="1176" y="92">Hit@k</text><text class="e" x="1272" y="91">정답 근거 기록을 찾은 요건의 비율</text>
-          <text class="g" x="1176" y="168">상위 1건</text><rect class="trk" x="1300" y="130" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="130" width="179.5" height="56" rx="10"></rect><text class="v own" x="1604" y="170">61.9%</text>
-          <text class="g" x="1176" y="244">상위 2건</text><rect class="trk" x="1300" y="206" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="206" width="233.7" height="56" rx="10"></rect><text class="v own" x="1604" y="246">80.6%</text>
-          <text class="g" x="1176" y="320">상위 3건</text><rect class="trk" x="1300" y="282" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="282" width="257.2" height="56" rx="10"></rect><text class="v own" x="1604" y="322">88.7%</text>
-          <line class="div" x1="1176" y1="386" x2="1712" y2="386"></line>
-          <text class="g" x="1176" y="440">Recall@3</text><text class="v own big" x="1176" y="500">74.4%</text>
-          <text class="e" x="1176" y="548">정답 근거 기록 가운데</text><text class="e" x="1176" y="580">상위 3건에 든 비율</text>
-          <text class="g" x="1460" y="440">MRR@3</text><text class="v own big" x="1460" y="500">0.740</text>
-          <text class="e" x="1460" y="548">첫 정답 근거 기록의</text><text class="e" x="1460" y="580">순위 역수 평균</text>
+          <path class="way on" d="M1264 485H1288M1288 419V551M1288 419H1310" marker-end="url(#fdg-own)"></path><path class="way on" d="M1288 551H1310" marker-end="url(#fdg-own)"></path>
+          <rect class="out" x="1322" y="360" width="390" height="118" rx="18"></rect><text class="d" x="1350" y="404">채용 공고 순위</text><text class="o" x="1350" y="452">상위 10건</text>
+          <rect class="out" x="1322" y="492" width="390" height="118" rx="18"></rect><text class="d" x="1350" y="536">요건별 근거 기록</text><text class="o" x="1350" y="584">상위 3건</text>
         </g>
       </svg>
     </div>
@@ -2279,6 +2217,123 @@ svg [data-morph] { transform-box: fill-box; }
           <path d="M1006 600H1372" class="ar" marker-end="url(#fda-tip)"></path>
           <rect class="bx ou" x="1380" y="352" width="332" height="288" rx="18"></rect>
           <text class="b" x="1406" y="404">요건별 근거 기록</text><text class="big" x="1406" y="516">상위 3건</text><text class="s" x="1406" y="574">표시 기준을 넘은 기록</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp" data-title="추천 모델 학습 데이터" data-kind="학습 흐름과 데이터 분리">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>추천 모델 학습 데이터</h2>
+      <p class="sub">교사 LLM 판정으로 만든 적합도 라벨과 요건별 근거</p>
+    </div>
+    <div class="body">
+      <svg class="fd-distill" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="교사 LLM의 판정을 루브릭 가중치로 점수화해 적합도 라벨과 요건별 근거를 만들고, 그것으로 경력 근거 헤드와 채용 공고 순위 결합 모델을 학습. 한국어 적합도 라벨은 학습 861쌍, 검증 180쌍, 평가 1,280쌍으로 나누고 분할 사이에 채용 공고와 프로필이 겹치지 않음">
+        <defs>
+          <marker id="fdd-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker>
+          <marker id="fdd-up" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#9A4030" stroke-width="1.8"></path></marker>
+          <pattern id="fdd-hatch" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: var(--ex-tint-100)"></rect></pattern>
+          <pattern id="fdd-hatch-own" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="20" height="20" style="fill: var(--ex-surface-50)"></rect><rect width="10" height="20" style="fill: #F3DCCB"></rect></pattern>
+        </defs>
+
+        <!-- 윗줄: 라벨을 만드는 쪽 (왼쪽 → 오른쪽) -->
+        <g class="in dl-3">
+          <text class="k" x="0" y="22">입력</text>
+          <rect x="0" y="42" width="260" height="96" rx="48" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="t" x="130" y="100" text-anchor="middle">채용 공고</text>
+          <rect x="0" y="156" width="260" height="96" rx="48" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="t" x="130" y="214" text-anchor="middle">합성 프로필</text>
+        </g>
+        <g class="in dl-4">
+          <path d="M272 90H292V128H310" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><path d="M272 204H292V166H310" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <text class="k" x="322" y="22">교사 판정</text>
+          <rect x="322" y="42" width="320" height="210" rx="20" style="fill:#FFF0E1;stroke:#E7CEB0;stroke-width:1.6"></rect>
+          <text class="t" x="352" y="140" style="font-size:38px">교사 LLM</text><text class="d" x="352" y="186">요구사항별 충족 수준 판정</text>
+        </g>
+        <g class="in dl-5">
+          <path d="M654 147H690" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <text class="k" x="702" y="22">루브릭 점수화</text>
+          <rect x="702" y="42" width="600" height="210" rx="20" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect>
+          <text class="d" x="730" y="92">요건별 가중치</text>
+          <rect x="730" y="114" width="246" height="58" rx="12" style="fill:#9A623B"></rect>
+          <rect x="980" y="114" width="217" height="58" rx="12" style="fill:#C99A6C"></rect>
+          <rect x="1201" y="114" width="73" height="58" rx="12" style="fill:#EBD5B8"></rect>
+          <text class="w" x="748" y="152">45%</text><text class="w" x="998" y="152">40%</text><text class="w dk" x="1237" y="152" text-anchor="middle">15%</text>
+          <text class="c" x="730" y="212">필수요건</text><text class="c" x="980" y="212">담당업무</text><text class="c" x="1274" y="212" text-anchor="end">우대요건</text>
+        </g>
+        <g class="in dl-6">
+          <path d="M1314 147H1350" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <text class="k" x="1362" y="22">적합도 라벨</text>
+          <rect x="1362" y="42" width="350" height="210" rx="20" style="fill:#ECF5F1;stroke:#CCE2D7;stroke-width:1.6"></rect>
+          <text class="big" x="1537" y="152" text-anchor="middle">0–100</text><text class="d" x="1537" y="206" text-anchor="middle">+ 요건별 근거 기록</text>
+        </g>
+
+        <!-- 아랫줄: 라벨로 배우는 쪽 (오른쪽 → 왼쪽) -->
+        <g class="in dl-7">
+          <path d="M1537 264V338" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path><text class="k" x="1556" y="308">학습</text>
+          <rect x="1040" y="350" width="671" height="296" rx="20" style="fill: var(--fp-own); stroke: var(--fp-own-line); stroke-width: 1.6"></rect>
+          <text class="t" x="1070" y="400" style="font-size:30px">추천 모델</text><text class="d" x="1682" y="398" text-anchor="end" style="fill:#9A4030">자체 학습 모델</text>
+          <rect x="1070" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
+          <text class="t" x="1094" y="504" style="font-size:29px">경력 근거 헤드</text><text class="d" x="1094" y="546">요건 × 기록 연결 점수</text><text class="d" x="1094" y="584" style="fill:#9A4030">모델 B</text>
+          <path d="M1366 523H1386" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#fdd-tip)"></path>
+          <rect x="1392" y="426" width="290" height="190" rx="16" style="fill:#FFFFFF;stroke:#E7CEB0;stroke-width:1.6"></rect>
+          <text class="t" x="1416" y="504" style="font-size:27px">채용 공고 순위 결합</text><text class="d" x="1416" y="546">채용 공고 적합도 점수</text><text class="d" x="1416" y="584" style="fill:#9A4030">모델 A</text>
+        </g>
+        <g class="in dl-8">
+          <text class="k" x="0" y="372">데이터 분리 · 한국어 적합도 라벨</text>
+          <rect x="0" y="392" width="310" height="200" rx="16" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="mk" x="28" y="434">학습</text><text class="hero" x="28" y="496" style="font-size:52px">861쌍</text><text class="d" x="28" y="538">채용 공고 124건</text><text class="d" x="28" y="568">프로필 144명</text>
+          <rect x="330" y="392" width="310" height="200" rx="16" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="mk" x="358" y="434">검증</text><text class="hero" x="358" y="496" style="font-size:52px">180쌍</text><text class="d" x="358" y="538">채용 공고 34건</text><text class="d" x="358" y="568">프로필 30명</text>
+          <rect x="660" y="392" width="310" height="200" rx="16" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text class="mk" x="688" y="434">평가</text><text class="hero" x="688" y="496" style="font-size:52px">1,280쌍</text><text class="d" x="688" y="538">채용 공고 32건</text><text class="d" x="688" y="568">프로필 40명</text>
+          <text class="d" x="0" y="632">분할 사이에 채용 공고 · 프로필 중복 없음 · 평가 분할은 모델 선택에 미사용</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide fp" data-title="추천 모델 평가 결과" data-kind="막대 차트">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">3</span><span class="sec">주요 아키텍처</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>추천 모델 평가 결과</h2>
+      <p class="sub">한국어 평가 · 프로필 40명 × 채용 공고 32건 · 1,280쌍 전부 채점</p>
+    </div>
+    <div class="body">
+      <svg class="fd-eval duo" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="한국어 평가 결과. 채용 공고 순위의 NDCG@10은 파일럿 MLP 0.236, 추천 모델 0.589, 추천 모델의 상위 10건을 외부 LLM으로 재정렬한 비교 실험 0.667. 순서 일치율은 파일럿 MLP 0.497, 추천 모델 0.672이고 무작위는 0.5. 요건별 근거 기록은 정답 근거 기록을 상위 1건에서 61.9퍼센트, 상위 2건 안에서 80.6퍼센트, 상위 3건 안에서 88.7퍼센트 찾았고 Recall@3는 74.4퍼센트, MRR@3는 0.740">
+        <!-- 채용 공고 순위 · NDCG@10 -->
+        <g class="in dl-3">
+          <text class="t" x="0" y="34">채용 공고 순위</text>
+          <text class="g" x="0" y="92">NDCG@10</text><text class="e" x="0" y="126">상위 10건의 순서 품질</text>
+          <g class="grid"><line x1="64" y1="160" x2="520" y2="160"></line><line x1="64" y1="330" x2="520" y2="330"></line></g><line class="base0" x1="64" y1="500" x2="520" y2="500"></line><text class="ax" x="50" y="168" text-anchor="end">1.0</text><text class="ax" x="50" y="338" text-anchor="end">0.5</text><text class="ax" x="50" y="508" text-anchor="end">0</text>
+          <rect class="bar base" x="96" y="419.8" width="110" height="80.2" rx="8"></rect><text class="v base" x="151.0" y="407.8" text-anchor="middle">0.236</text><rect class="bar own" x="236" y="299.7" width="110" height="200.3" rx="8"></rect><text class="v own" x="291.0" y="287.7" text-anchor="middle">0.589</text><rect class="bar ref" x="376" y="273.2" width="110" height="226.8" rx="8"></rect><text class="v ref" x="431.0" y="261.2" text-anchor="middle">0.667</text>
+          <text class="g sm" x="151" y="540" text-anchor="middle">파일럿 MLP</text>
+          <text class="g sm" x="291" y="540" text-anchor="middle">추천 모델</text>
+          <text class="g sm" x="431" y="540" text-anchor="middle">외부 LLM</text><text class="g sm" x="431" y="572" text-anchor="middle">재정렬</text>
+          <text class="e" x="431" y="608" text-anchor="middle">비교 실험 · 서비스 기본 꺼짐</text>
+        </g>
+        <!-- 채용 공고 순위 · 순서 일치율 -->
+        <g class="in dl-4">
+          <text class="g" x="660" y="92">순서 일치율</text><text class="e" x="660" y="126">두 건 중 더 맞는 쪽을 앞에 둔 비율</text>
+          <g class="grid"><line x1="660" y1="160" x2="1080" y2="160"></line><line x1="660" y1="330" x2="1080" y2="330"></line></g><line class="base0" x1="660" y1="500" x2="1080" y2="500"></line><text class="ax" x="646" y="168" text-anchor="end">1.0</text><text class="ax" x="646" y="338" text-anchor="end">0.5</text><text class="ax" x="646" y="508" text-anchor="end">0</text>
+          <rect class="bar base" x="704" y="331.0" width="110" height="169.0" rx="8"></rect><text class="v base" x="759.0" y="319.0" text-anchor="middle">0.497</text><rect class="bar own" x="844" y="271.5" width="110" height="228.5" rx="8"></rect><text class="v own" x="899.0" y="259.5" text-anchor="middle">0.672</text>
+          <line class="rnd" x1="676" y1="330" x2="984" y2="330"></line><text class="e rnd" x="994" y="338">무작위</text>
+          <text class="g sm" x="759" y="540" text-anchor="middle">파일럿 MLP</text>
+          <text class="g sm" x="899" y="540" text-anchor="middle">추천 모델</text>
+        </g>
+        <line class="div" x1="1136" y1="6" x2="1136" y2="600"></line>
+        <!-- 요건별 근거 기록 -->
+        <g class="in dl-5">
+          <text class="t" x="1176" y="34">요건별 근거 기록</text>
+          <text class="g" x="1176" y="92">Hit@k</text><text class="e" x="1272" y="91">정답 근거 기록을 찾은 요건의 비율</text>
+          <text class="g" x="1176" y="168">상위 1건</text><rect class="trk" x="1300" y="130" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="130" width="179.5" height="56" rx="10"></rect><text class="v own" x="1604" y="170">61.9%</text>
+          <text class="g" x="1176" y="244">상위 2건</text><rect class="trk" x="1300" y="206" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="206" width="233.7" height="56" rx="10"></rect><text class="v own" x="1604" y="246">80.6%</text>
+          <text class="g" x="1176" y="320">상위 3건</text><rect class="trk" x="1300" y="282" width="290" height="56" rx="10"></rect><rect class="bar own" x="1300" y="282" width="257.2" height="56" rx="10"></rect><text class="v own" x="1604" y="322">88.7%</text>
+          <line class="div" x1="1176" y1="386" x2="1712" y2="386"></line>
+          <text class="g" x="1176" y="440">Recall@3</text><text class="v own big" x="1176" y="500">74.4%</text>
+          <text class="e" x="1176" y="548">정답 근거 기록 가운데</text><text class="e" x="1176" y="580">상위 3건에 든 비율</text>
+          <text class="g" x="1460" y="440">MRR@3</text><text class="v own big" x="1460" y="500">0.740</text>
+          <text class="e" x="1460" y="548">첫 정답 근거 기록의</text><text class="e" x="1460" y="580">순위 역수 평균</text>
         </g>
       </svg>
     </div>
