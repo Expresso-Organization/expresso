@@ -1355,6 +1355,9 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-toc .t { margin-top: 28px; font-size: 34px; word-break: keep-all; line-height: 1.25; }
 .fd-toc ul { margin-top: 22px; gap: 10px; }
 .fd-toc li { font-size: 25px; }
+/* 하위 항목 — 한 단계 작게, 왼쪽 선으로 묶음 */
+.fd-toc ul.sub { margin-top: 10px; gap: 6px; padding-left: 14px; border-left: 2px solid var(--ex-line-200); }
+.fd-toc ul.sub li { font-size: 21px; color: var(--ex-slate-400); }
 .fd-toc .two { display: grid; grid-template-columns: .82fr 1fr; gap: 28px; margin-top: 22px; }
 .fd-toc .two ul { margin-top: 10px; }
 .fd-toc .g { font-size: 22px; font-weight: 600; color: var(--ex-slate-700); letter-spacing: -.02em; padding-bottom: 8px; border-bottom: 2px solid var(--ex-slate-300); white-space: nowrap; }
@@ -1959,10 +1962,10 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fp-cols fp-toc fd-toc">
         <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li><span data-ch="toc-bg" style="display: inline-block">선정 배경</span></li></ul></div>
-        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>이름의 뜻</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li><li>주요 기능 화면</li></ul></div>
+        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>이름의 뜻</li><li>벤치마킹 사례와 차별점</li><li>주요 기능<ul class="sub"><li>커리어 기록</li><li>채용 공고 검색</li><li>포트폴리오 생성</li><li>배포와 분석</li></ul></li></ul></div>
         <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 개발 이유</li><li>추천 모델 아키텍처</li><li>추천 모델 학습 데이터</li><li>추천 모델 평가 결과</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
-          <ul><li>개발 범위</li><li>1.0 설계 범위 완성</li><li>개발팀 구성 및 역할</li></ul>
+          <ul><li>개발 범위</li><li>1.0 설계 범위 완성</li><li>Expresso 1.0의 한계</li><li>Expresso 2.0<ul class="sub"><li>시연 영상</li><li>Expresso 2.0의 출발점</li><li>Expresso 2.0의 핵심</li><li>1.1 ~ 2.0의 단계</li></ul></li><li>개발팀 구성 및 역할</li></ul>
         </div>
         <div class="in dl-7"><div class="n">5</div><div class="t">Lessons &amp; Learned</div></div>
         <div class="in dl-8"><div class="n">6</div><div class="t">결론</div><ul><li>개발 산출물</li><li>기대 성과</li></ul></div>
