@@ -6,13 +6,13 @@ export const InterviewQuestionBasisSchema = z.discriminatedUnion("type", [
   z.strictObject({
     type: z.literal("requirement"),
     requirementId: UuidSchema,
-    coverage: z.enum(["partial", "missing"]),
+    coverage: z.enum(["partial", "missing", "covered"]),
     evidence: z.string().min(1).max(5_000),
   }),
   z.strictObject({
     type: z.literal("record_gap"),
     recordId: UuidSchema,
-    gap: z.literal("metric"),
+    gap: z.enum(["metric", "context"]),
     evidence: z.string().min(1).max(300),
   }),
 ]);
