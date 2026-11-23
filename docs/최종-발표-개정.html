@@ -1746,6 +1746,26 @@ svg [data-morph] { transform-box: fill-box; }
 .rp-cap.on { opacity: 1; }
 .rp-cap .n { display: grid; place-items: center; min-width: 64px; height: 40px; padding: 0 12px; border-radius: 999px; background: var(--ex-espresso); font-family: var(--ex-font-brand); font-size: 20px; font-weight: 500; }
 .rp-cap .t { font-size: 30px; font-weight: 600; letter-spacing: -.02em; }
+
+.rp-cap { display: none !important; }
+.rp-host .replayer-mouse, .rp-host .replayer-mouse-tail { display: none !important; }
+/* ── 주요 기능 · 요소 추출 재생 ──
+   녹화 문서에서 보여 줄 요소만 남기고 나머지와 배경은 투명하게 지웁니다. 창(.rx-part)은 매 프레임 그 요소의 실제 경계를 따라갑니다. */
+.rx .body { position: relative; }
+.rx-stage { position: absolute; inset: 0; }
+.rx-part { position: absolute; overflow: hidden; pointer-events: none; opacity: 0; transform: translateY(22px); transition: opacity 520ms cubic-bezier(.2,.8,.2,1), transform 720ms cubic-bezier(.2,.8,.2,1), filter 520ms ease, left 820ms cubic-bezier(.65,0,.35,1), top 820ms cubic-bezier(.65,0,.35,1), width 820ms cubic-bezier(.65,0,.35,1), height 600ms cubic-bezier(.2,.8,.2,1); }
+.rx-part.on { opacity: 1; transform: none; }
+.rx-part.leave { opacity: 0; transform: translateY(-14px); transition-duration: 300ms, 360ms; }
+.rx-part.fade { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent calc(100% - 20px)); mask-image: linear-gradient(to bottom, #000 calc(100% - 120px), transparent calc(100% - 20px)); }
+.rx-part .rx-host { position: absolute; left: 0; top: 0; width: 1440px; height: 900px; transform-origin: 0 0; transition: transform 820ms cubic-bezier(.65,0,.35,1); }
+.rx-part .replayer-wrapper { position: absolute; inset: 0; background: transparent; }
+.rx-part iframe { border: 0; width: 1440px; height: 900px; display: block; background: transparent; }
+.rx-part .replayer-mouse, .rx-part .replayer-mouse-tail { display: none !important; }
+.rx-note { position: absolute; width: 760px; opacity: 0; transform: translateY(14px); transition: opacity 260ms ease, transform 260ms ease; }
+.rx-note.on { transition: opacity 560ms cubic-bezier(.2,.8,.2,1), transform 640ms cubic-bezier(.2,.8,.2,1); }
+.rx-note.on { opacity: 1; transform: none; }
+.rx-note .k { font-size: 24px; font-weight: 700; letter-spacing: -.01em; color: var(--ex-espresso); }
+.rx-note .t { margin-top: 10px; font-size: 34px; font-weight: 600; line-height: 1.32; letter-spacing: -.03em; color: var(--ex-ink-900); word-break: keep-all; }
 </style>
 </head>
 
@@ -2002,12 +2022,15 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp rp" data-title="주요 기능 · 채용 공고 검색" data-kind="실제 조작 녹화 재생">
+<section class="slide fp rx" data-title="주요 기능 · 채용 공고 검색" data-kind="요소 추출 재생">
   <div class="frame">
-    <div class="rp-top in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">2</span><span class="sec">주요 기능</span><b>채용 공고 검색</b></div>
-    <div class="rp-screen in in-fade dl-2"></div>
-    <ol class="rp-steps"><li data-ev="jobs2" data-from="채용 공고 탐색" data-to="자연어 조건 검색" data-shift="0">내 기록과 가까운 순으로 정렬된 채용 공고</li><li data-ev="jobs2" data-from="자연어 조건 검색" data-to="검색 결과" data-shift="0">원하는 조건을 문장으로 입력</li><li data-ev="jobs2" data-from="검색 결과" data-to="채용 공고 상세" data-shift="0">조건 해석과 일치도 순 결과</li><li data-ev="jobs2" data-from="채용 공고 상세" data-to="" data-shift="0">요건마다 내 근거 기록 연결</li></ol>
-    <div class="rp-cap" aria-live="polite"><span class="n"></span><span class="t"></span></div>
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>채용 공고 검색</h2>
+      <p class="sub">문장으로 찾고, 일치도와 요건별 근거로 고르는 채용 공고</p>
+    </div>
+    <div class="body"><div class="rx-stage"></div></div>
+    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']"], "pad": 32, "reveal": {"sel": "[class*='__parsedRow'] > *", "gap": 90}}, "results": {"sel": ["[class*='__results ']", "[class*='__results']"], "clip": "[class*='__rows'] > :nth-child(3)", "pad": 32, "fade": true, "reveal": {"sel": "[class*='__resultsHead'], [class*='__rows'] > *", "gap": 90}}, "reqs": {"sel": ["[class*='qBDErq__section']"], "text": "자격 요건", "pad": 32, "style": "width: 760px; max-width: 760px;", "reveal": {"sel": "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", "gap": 150}}}, "notes": {"n1": {"x": 164, "y": 330, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 960, "y": 300, "w": 700, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 1230, "y": 300, "w": 480, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "seek", "search", 3300], [0, "place", "search", 164, 120, 1.5], [0, "show", "search"], [500, "play", "search", 3300, 9300], [5600, "note", "n1"]]}, {"do": [[0, "hide", "n1"], [80, "place", "search", 0, 34, 0.9], [640, "seek", "results", 9300], [640, "place", "results", 0, 170, 1.22], [640, "show", "results"], [900, "play", "results", 9300, 11420], [1500, "note", "n2"]]}, {"do": [[0, "hide", "n2"], [0, "out", "search"], [0, "out", "results"], [240, "seek", "reqs", 16800], [240, "place", "reqs", 0, 150, 1.5], [240, "show", "reqs"], [1500, "note", "n3"]]}]}</script>
   </div>
 </section>
 
@@ -3295,6 +3318,129 @@ window.deck = new Deck();
 })();
 </script>
 
+<script>
+/* 주요 기능 · 요소 추출 재생 */
+(() => {
+  const deck = window.deck; if (!deck) return;
+  const BASE = 'assets/최종-발표/rr/';
+  const load = (src) => new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); });
+  const libReady = () => window.rrweb ? Promise.resolve() : load(BASE + 'rrweb.js');
+  const need = (k) => (window.__rrData && window.__rrData[k]) ? Promise.resolve() : load(BASE + k + '.js');
+  const KEEP = 'html,body{background:transparent!important}body *{visibility:hidden!important;animation:none!important;transition:none!important}[data-rx-keep],[data-rx-keep] *{visibility:visible!important}';
+  const state = new WeakMap();
+  let raf = 0, active = null;
+  const docOf = (p) => p.host.querySelector('iframe')?.contentDocument;
+  const findEl = (p) => {
+    const d = docOf(p); if (!d || !d.body) return null;
+    if (!d.getElementById('__rxk')) { const st = d.createElement('style'); st.id = '__rxk'; st.textContent = KEEP; (d.head || d.documentElement).appendChild(st); }
+    for (const sel of p.cfg.sel) {
+      const list = [...d.querySelectorAll(sel)].filter((e) => !p.cfg.text || e.textContent.includes(p.cfg.text));
+      const e = list.find((x) => { const r = x.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+      if (e) return e;
+    }
+    return null;
+  };
+  const REVEAL = 'opacity 460ms cubic-bezier(.2,.8,.2,1), transform 560ms cubic-bezier(.2,.8,.2,1)';
+  const update = (p, instant) => {
+    const el = findEl(p); const d = docOf(p);
+    if (d) d.querySelectorAll('[data-rx-keep]').forEach((x) => { if (x !== el) x.removeAttribute('data-rx-keep'); });
+    if (!el) return false;
+    if (!el.hasAttribute('data-rx-keep')) el.setAttribute('data-rx-keep', '');
+    if (p.cfg.style && !el.dataset.rxStyled) { el.dataset.rxStyled = '1'; el.style.cssText += ';' + p.cfg.style; }
+    /* 새로 나타난 실제 요소(조건 칩 · 결과 카드 · 요건 행)를 차례로 드러냅니다. */
+    if (p.cfg.reveal) {
+      const fresh = [...el.querySelectorAll(p.cfg.reveal.sel)].filter((x) => !x.dataset.rxSeen);
+      fresh.forEach((x, i) => {
+        x.dataset.rxSeen = '1';
+        if (p.quiet) return;
+        x.style.transition = 'none'; x.style.opacity = '0'; x.style.transform = 'translateY(10px)';
+        p.revealTimers.push(setTimeout(() => { x.style.transition = REVEAL; x.style.opacity = '1'; x.style.transform = ''; }, 40 + i * p.cfg.reveal.gap));
+      });
+    }
+    const r = el.getBoundingClientRect(); let bottom = r.bottom;
+    if (p.cfg.clip) { const c = el.querySelector(p.cfg.clip); if (c) bottom = Math.min(bottom, c.getBoundingClientRect().bottom); }
+    const { x, y, k } = p.at; const pad = p.cfg.pad;
+    const css = { left: x - pad + 'px', top: y - pad + 'px', width: Math.round(r.width * k + pad * 2) + 'px', height: Math.round((bottom - r.top) * k + pad * 2) + 'px' };
+    const tf = `translate(${(pad - r.left * k).toFixed(1)}px, ${(pad - r.top * k).toFixed(1)}px) scale(${k})`;
+    if (instant) { p.el.style.transition = 'none'; p.host.style.transition = 'none'; }
+    for (const [n, v] of Object.entries(css)) if (p.el.style[n] !== v) p.el.style[n] = v;
+    if (p.host.style.transform !== tf) p.host.style.transform = tf;
+    if (instant) { p.el.offsetWidth; p.el.style.transition = ''; p.host.style.transition = ''; }
+    return true;
+  };
+  const frame = () => {
+    raf = 0; const st = active && state.get(active); if (!st) return;
+    for (const p of Object.values(st.parts)) if (p.shown) update(p, false);
+    raf = requestAnimationFrame(frame);
+  };
+  const loop = (s) => { active = s; if (!raf) raf = requestAnimationFrame(frame); };
+  const setup = async (s) => {
+    if (state.has(s)) return state.get(s);
+    const cfg = JSON.parse(s.querySelector('.rx-cfg').textContent);
+    await libReady(); await need(cfg.scene);
+    const ev = window.__rrData[cfg.scene]; const stage = s.querySelector('.rx-stage');
+    const parts = {}, notes = {};
+    for (const [id, c] of Object.entries(cfg.parts)) {
+      const el = document.createElement('div'); el.className = 'rx-part' + (c.fade ? ' fade' : '');
+      const host = document.createElement('div'); host.className = 'rx-host'; el.appendChild(host); stage.appendChild(el);
+      const r = new rrweb.Replayer(ev, { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
+      r.pause(0);
+      parts[id] = { el, host, r, cfg: c, at: { x: 0, y: 0, k: 1 }, shown: false, timer: null, revealTimers: [], quiet: false };
+    }
+    for (const [id, n] of Object.entries(cfg.notes || {})) {
+      const el = document.createElement('div'); el.className = 'rx-note'; el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; if (n.w) el.style.width = n.w + 'px';
+      el.innerHTML = `<div class="k"></div><div class="t"></div>`; el.querySelector('.k').textContent = n.k; el.querySelector('.t').textContent = n.t;
+      stage.appendChild(el); notes[id] = { el, timer: null };
+    }
+    const st = { cfg, parts, notes }; state.set(s, st); return st;
+  };
+  const timers = [];
+  const run = (st, act, instant) => {
+    const [, op, id, a, b, c] = act; const p = st.parts[id]; const n = st.notes[id];
+    if (op === 'place') { p.at = { x: a, y: b, k: c }; if (instant || !p.shown) update(p, true); }
+    else if (op === 'quiet') p.quiet = !!a;
+    else if (op === 'show') {
+      p.el.classList.remove('leave');
+      if (!p.shown) { update(p, true); p.shown = true; }
+      if (instant) { p.el.style.transition = 'none'; p.el.classList.add('on'); p.el.offsetWidth; p.el.style.transition = ''; }
+      else requestAnimationFrame(() => p.el.classList.add('on'));
+    }
+    else if (op === 'out') { p.el.classList.add('leave'); p.el.classList.remove('on'); timers.push(setTimeout(() => { if (!p.el.classList.contains('on')) p.shown = false; }, 400)); }
+    else if (op === 'seek') p.r.pause(a);
+    else if (op === 'play') { clearTimeout(p.timer); if (instant) { p.r.pause(b); return; } p.r.play(a); p.timer = setTimeout(() => p.r.pause(b), b - a); }
+    else if (op === 'note') n.el.classList.add('on');
+    else if (op === 'hide') n.el.classList.remove('on');
+  };
+  const clearAll = (st) => { timers.splice(0).forEach(clearTimeout); Object.values(st.parts).forEach((p) => { clearTimeout(p.timer); p.revealTimers.splice(0).forEach(clearTimeout); }); };
+  const reset = (st) => {
+    clearAll(st);
+    Object.values(st.parts).forEach((p) => {
+      p.r.pause(0); p.shown = false; p.el.classList.remove('on', 'leave');
+      const d = docOf(p); if (d) d.querySelectorAll('[data-rx-seen]').forEach((x) => { x.removeAttribute('data-rx-seen'); x.style.opacity = ''; x.style.transform = ''; x.style.transition = ''; });
+    });
+    Object.values(st.notes).forEach((n) => n.el.classList.remove('on'));
+  };
+  const go = async (s, n, back) => {
+    const st = await setup(s); const steps = st.cfg.steps; n = Math.max(1, Math.min(n, steps.length)); s.dataset.step = n; loop(s);
+    clearAll(st);
+    if (back) { reset(st); Object.values(st.parts).forEach((p) => { p.quiet = true; }); for (let i = 0; i < n; i++) steps[i].do.forEach((act) => run(st, act, true)); Object.values(st.parts).forEach((p) => { if (p.shown) update(p, true); p.quiet = false; }); return; }
+    steps[n - 1].do.forEach((act) => { if (!act[0]) run(st, act, false); else timers.push(setTimeout(() => run(st, act, false), act[0])); });
+  };
+  const count = (s) => JSON.parse(s.querySelector('.rx-cfg').textContent).steps.length;
+  const step = (s) => Number(s.dataset.step || 0);
+  const isRx = (s) => s && s.classList.contains('rx');
+  const next = deck.next.bind(deck), prev = deck.prev.bind(deck), show = deck.show;
+  deck.next = () => { const s = deck.slides[deck.i]; if (isRx(s) && step(s) < count(s)) return go(s, step(s) + 1); next(); };
+  deck.prev = () => { const s = deck.slides[deck.i]; if (isRx(s) && step(s) > 1) return go(s, step(s) - 1, true); prev(); };
+  deck.show = (n) => {
+    const from = deck.i ?? 0; show(n); const s = deck.slides[deck.i];
+    if (!isRx(s)) { active = null; return; }
+    if (n < from) go(s, count(s), true); else setup(s).then((st) => { reset(st); setTimeout(() => go(s, 1), 500); });
+  };
+  const s0 = deck.slides[deck.i]; if (isRx(s0)) setup(s0).then(() => go(s0, 1));
+})();
+</script>
+
 <!-- 글 고치기 · 장 다루기 · 파일에 바로 저장 —
      여러 발표 자료가 함께 쓰는 도구입니다(docs/templates/deck-editor.js).
      이 파일이 없어도 발표는 그대로 돌아갑니다. -->
@@ -3305,6 +3451,7 @@ window.deck = new Deck();
     /* 컨트롤러가 실행 중에 남긴 것을 걷어냅니다 — 무대 축소 transform,
        활성 장 표시, 자동으로 만든 목록. 도구는 이걸 알 수 없습니다. */
     beforeSave(doc) {
+      doc.querySelectorAll('.slide.rx').forEach((s) => { s.removeAttribute('data-step'); s.querySelectorAll('.rx-stage').forEach((el) => { el.innerHTML = ''; }); });
       /* 주요 기능 장의 재생 화면(녹화 재생기가 만든 요소)과 단계 상태를 걷어냅니다. */
       doc.querySelectorAll('.slide.rp').forEach((s) => {
         s.removeAttribute('data-step');
