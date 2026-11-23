@@ -47,6 +47,7 @@ export function registerAgentChatRoutes(app: FastifyInstance, service: AgentChat
   app.post(`${base}/:id/retry`, options, async (req, reply) => { const userId = requireAuth(req).user.id; return reply.code(202).send({ data: await service.retry(userId, id(req.params), await service.credentials.read(userId)) }); });
   app.post(`${base}/:id/contexts`, options, async req => ({ data: await service.attach(requireAuth(req).user.id, id(req.params), AddAgentContextSchema.parse(req.body).context) }));
   app.post(`${base}/:id/context-selection`, options, async req => { const input = SetAgentContextsSchema.parse(req.body); return { data: await service.setContexts(requireAuth(req).user.id, id(req.params), input.contexts, input.expectedVersion) }; });
+  app.post(`${base}/:id/interview-answers/:toolId/undo`, options, async req => ({ data: await service.undoInterviewAnswer(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { toolId: string }).toolId)) }));
   app.post(`${base}/:id/saved-records/:recordId/undo`, options, async req => ({ data: await service.undoSavedRecord(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { recordId: string }).recordId)) }));
   app.post(`${base}/:id/page-edits/:editId/undo`, options, async req => ({ data: await service.undoPageEdit(requireAuth(req).user.id, id(req.params), UuidSchema.parse((req.params as { editId: string }).editId)) }));
   app.post(`${base}/:id/cancel`, options, async req => ({ data: await service.cancel(requireAuth(req).user.id, id(req.params)) }));

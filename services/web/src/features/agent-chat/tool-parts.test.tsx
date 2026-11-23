@@ -167,7 +167,8 @@ describe("대화 속 화면의 등록표", () => {
       unmount();
       const failed = tool(name, {}, "failed");
       const again = render(<>{toolPartFor(failed)!.render(failed, context())}</>);
-      expect(again.container.firstChild, name).toBeNull();
+      if (name === "비교 표") expect(again.container.firstChild, name).toBeNull();
+      else expect(screen.getByRole("alert").textContent).toContain("검색을 실행하지 못했습니다");
       again.unmount();
       expect(container).toBeTruthy();
     }

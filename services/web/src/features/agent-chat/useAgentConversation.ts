@@ -178,6 +178,7 @@ export function useAgentConversation(context?: AgentContext, options: { restore?
     /** 에이전트가 저장한 지면 고침 되돌리기. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
     undoPageEdit: (editId: string) => decide(`page-edits/${editId}/undo`, {}),
     /** 에이전트가 저장한 기록 되돌리기. 기록은 휴지통으로 간다. 실패를 카드가 직접 보여 주도록 오류를 다시 던진다. */
+    undoInterviewAnswer: (toolId: string) => decide(`interview-answers/${toolId}/undo`, {}),
     undoSavedRecord: (recordId: string) => decide(`saved-records/${recordId}/undo`, {}),
   };
 }

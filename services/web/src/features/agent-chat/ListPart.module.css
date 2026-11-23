@@ -17,3 +17,9 @@
 .go { flex-shrink: 0; color: var(--ex-fg-subtle); }
 .empty { margin: 0; padding: 4px 14px 12px; font-size: var(--ex-text-2xs); color: var(--ex-fg-muted); }
 .pending { margin: 10px 0 0; font-family: var(--ex-font-ui); font-size: var(--ex-text-xs); color: var(--ex-fg-muted); }
+
+.conditions { display: flex; flex-wrap: wrap; gap: var(--ex-spacing-sm); list-style: none; margin: 0; padding: 0 var(--ex-spacing-md) var(--ex-spacing-md); font-size: var(--ex-text-2xs); color: var(--ex-fg-body); }
+.conditions li { border: 1px solid var(--ex-border); border-radius: var(--ex-radius-pill); padding: var(--ex-spacing-sm); }
+.note { white-space: normal; font-size: var(--ex-text-2xs); color: var(--ex-fg-body); line-height: var(--ex-leading-relaxed); overflow-wrap: anywhere; }
+.sectionLabel { margin: 0; padding: var(--ex-spacing-sm) var(--ex-spacing-md); color: var(--ex-fg-muted); font-size: var(--ex-text-2xs); background: var(--ex-bg-tint); }
+@media (prefers-reduced-motion: reduce) { .row { transition: none; } }

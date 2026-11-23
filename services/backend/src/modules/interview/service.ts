@@ -230,7 +230,7 @@ export class InterviewService implements InterviewApi {
    * 대화에서 한 질문의 답을 저장한다. 같은 근거의 질문이 세션에 있으면 그 질문의 답을 다시 쓰고(꼬리 답을 합친 글), 없으면 질문을 새로 붙인다.
    * 근거는 지금 고를 수 있는 근거(`questionBases`)에 있어야 하고, 질문은 세션마다 6개까지다. 저장 · 기록 생성 · 정리 작업은 지금의 답 저장과 같다.
    */
-  async saveConversationAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string }, idempotencyKey: string) {
+  async saveConversationAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string; recordId?: string }, idempotencyKey: string) {
     const db = mongoCollections(this.context.db);
     const [brew, session] = await Promise.all([db.brews.findOne({ _id: brewId, userId, deletedAt: null }), db.interviewSessions.findOne({ userId, brewId })]);
     if (!brew || !session) throw new InterviewError(404, "interview session not found");
@@ -244,6 +244,7 @@ export class InterviewService implements InterviewApi {
     const questionId = await inTransaction(this.context, async (tx) => {
       await requireActiveUser(tx, userId);
       const collections = mongoCollections(tx.db); const options = { session: tx.session };
+      if (input.recordId && !await collections.brewSources.findOne({ userId, brewId, recordId: input.recordId, isSelected: true }, options)) throw new InterviewError(409, "선택한 기록에만 답을 반영할 수 있습니다.");
       const all = await collections.questions.find({ userId, interviewSessionId: session._id }, options).toArray();
       const active = all.filter((question) => question.active);
       const found = active.find((question) => interviewBasisKey(InterviewQuestionBasisSchema.parse(question.basis)) === key);
@@ -254,7 +255,9 @@ export class InterviewService implements InterviewApi {
       await collections.interviewSessions.updateOne({ _id: session._id, userId }, { $set: { questionCount: active.length + 1, status: "open", updatedAt: now }, $inc: { version: 1 } }, options);
       return id;
     });
-    return this.saveAnswer(userId, session._id, questionId, idempotencyKey, { inputType: "text", transcript: input.transcript });
+    const result = await saveMongoAnswer(this.context, userId, session._id, questionId, idempotencyKey, { inputType: "text", transcript: input.transcript }, input.recordId);
+    await this.externalBodyListener?.(userId, result.answer.createdRecordId).catch(() => undefined);
+    return result;
   }
 }
 

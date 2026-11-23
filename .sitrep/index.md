@@ -24,3 +24,5 @@
 | [20261122-1315-match-release-readiness](sessions/20261122-1315-match-release-readiness/session.md) | Expresso 추천모델 운영 적용 | 완료됨 | 100% |
 | [20261123-1740-consultant-portfolio](sessions/20261123-1740-consultant-portfolio/session.md) | 포트폴리오 잇기 — 기록이 쌓이면 컨설턴트가 먼저 제안 | 완료됨 | 100% |
 | [20261123-2121-match-production-release](sessions/20261123-2121-match-production-release/session.md) | Expresso 추천모델 운영 배포 | 완료됨 | 100% |
+
+| [20261124-0318-chat-usability](sessions/20261124-0318-chat-usability/session.md) | Expresso 채팅 사용성 개선 | 완료됨 | 100% |

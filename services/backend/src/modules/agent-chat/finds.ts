@@ -1,4 +1,4 @@
-import type { Activity, AgentFindItem, JobPostingSummary } from "@expresso/contracts";
+import { findKoreanPlace, type Activity, type AgentFindItem, type JobPostingSummary } from "@expresso/contracts";
 
 /**
  * 대화에서 찾은 공고 · 활동을 목록의 줄로 옮긴다.
@@ -11,7 +11,8 @@ const ACTIVITY_KIND: Record<string, string> = { contest: "공모전", hackathon:
 const pieces = (...values: (string | null | undefined)[]) => values.map(value => value?.trim()).filter((value): value is string => !!value).map(value => value.slice(0, 80)).slice(0, 4);
 
 export function jobItem(job: JobPostingSummary): AgentFindItem {
-  return { kind: "job", id: job.id, title: job.title, sub: job.company.name.slice(0, 200), meta: pieces(job.location, job.experienceLabel, job.workType, job.family), daysLeft: job.daysLeft, href: `/jobs/${job.id}`, external: false };
+  const place = findKoreanPlace(job.location ?? "");
+  return { kind: "job", id: job.id, title: job.title, sub: job.company.name.slice(0, 200), meta: pieces(job.location ?? "근무지 미확인", job.experienceLabel, job.workType, job.family), locationStatus: job.nearby || place ? "known" : "unknown", matchNote: [job.nearby ? `${job.nearby.place} · 검색 지역에서 약 ${job.nearby.distanceKm}km` : place ? `근무지: ${place.name}` : "상세 근무지 확인 필요", job.match?.reason].filter(Boolean).join(" · ").slice(0, 500), daysLeft: job.daysLeft, href: `/jobs/${job.id}`, external: false };
 }
 
 export function activityItem(activity: Activity): AgentFindItem {

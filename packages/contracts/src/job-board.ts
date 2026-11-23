@@ -231,6 +231,8 @@ export const ListJobPostingsQuerySchema = z.strictObject({
   stage: JobInterestStageSchema.optional(),
   deadline: JobDeadlineFilterSchema.optional(),
   family: z.string().trim().min(1).max(60).optional(),
+  titleTerms: z.array(z.string().trim().min(1).max(80)).min(1).max(20).optional(),
+  families: z.array(z.string().trim().min(1).max(60)).min(1).max(6).optional(),
   /**
    * 근무지 나라. `location_region`을 나라로 묶어 건다 — 원문(`location`)은
    * 같은 서울이 다섯 표기로 흩어져 있어 그대로 걸면 절반이 빠진다.
@@ -257,6 +259,8 @@ export const ListJobPostingsQuerySchema = z.strictObject({
    * 앞선다 — `sort`는 같은 칸 안에서만 쓰인다.
    */
   location: z.string().trim().min(1).max(60).optional(),
+  locations: z.array(z.string().trim().min(1).max(60)).min(1).max(6).optional(),
+  locationMode: z.enum(["nearby", "strict", "prefer"]).optional(),
   /**
    * **내 연차.** 요구 최소 연차가 이 값 이하인 공고만 남긴다.
    *

@@ -11,6 +11,7 @@ import { ReplanDraftCard } from "./ReplanDraftCard";
 import { PageEditCard } from "./PageEditCard";
 import { ChoicePart, ChoicePartPending } from "./ChoicePart";
 import { FormPart, FormPartPending } from "./FormPart";
+import { InterviewSavedCard } from "./InterviewSavedCard";
 import { SavedRecordCard, SavedRecordPending } from "./SavedRecordCard";
 import { CommitmentCard, CommitmentPending } from "./CommitmentCard";
 import { DiagnosisCard, DiagnosisPending } from "./DiagnosisCard";
@@ -45,6 +46,7 @@ export interface ToolPartContext {
   /** 부품에 답한다. 선택지는 고른 id, 입력 칸 묶음은 칸마다의 값이다. */
   answerPart(partId: string, answer: { optionIds: string[] } | { values: { id: string; text: string }[] }): Promise<void>;
   /** 에이전트가 저장한 기록을 되돌린다(휴지통으로 옮긴다). */
+  undoInterviewAnswer?(toolId: string): Promise<void>;
   undoSavedRecord(recordId: string): Promise<void>;
 }
 
@@ -65,6 +67,7 @@ export interface ToolPart {
 const CHOICE_TOOL_NAMES: readonly string[] = ["선택지 질문", "포트폴리오 제안"];
 
 export const TOOL_PARTS: readonly ToolPart[] = [
+  { key: "interviewSaved", placement: "below", toolNames: ["답 저장"], match: tool => tool.name === "답 저장", render: (tool, context) => tool.interviewSaved ? <InterviewSavedCard saved={tool.interviewSaved} disabled={context.busy} onUndo={() => context.undoInterviewAnswer?.(tool.id) ?? Promise.resolve()} /> : null },
   // 포트폴리오 제안은 서버가 질문과 선택지를 정한 선택지 부품이다. 그리는 법은 선택지 질문과 같다.
   { key: "choice", placement: "below", toolNames: CHOICE_TOOL_NAMES, match: tool => CHOICE_TOOL_NAMES.includes(tool.name),
     render: (tool, context) => tool.ui?.kind === "choice"

@@ -26,6 +26,7 @@ export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: Fil
   // 축별 제외(`skip`) 바깥에 둔다. 관심 공고는 사용자가 담은 것이라 마감해도 남긴다.
   if (query.deadline === undefined && query.interested === undefined) clauses.push(openPostingClause(at));
   if (query.q) clauses.push({ $or: ["title", "company.name", "descriptionRaw"].map((field) => ({ [field]: { $regex: escapeSearch(query.q!), $options: "i" } })) });
+  if (query.titleTerms?.length) clauses.push({ $or: query.titleTerms.map(term => ({ title: { $regex: escapeSearch(term), $options: "i" } })) });
   if (query.technology) {
     const escaped = escapeSearch(query.technology);
     // requirements.technologies는 그 공고를 한 번이라도 분석해야 채워진다 —
@@ -44,7 +45,8 @@ export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: Fil
   if (query.interested !== undefined) clauses.push({ "interest._id": { $exists: query.interested } });
   if (query.stage) clauses.push({ "interest.stage": query.stage });
   if (skip !== "category") {
-    if (query.family) clauses.push({ jobFamily: query.family });
+    if (query.families?.length) clauses.push({ jobFamily: { $in: query.families } });
+    else if (query.family) clauses.push({ jobFamily: query.family });
     if (query.remote === true) clauses.push({ workType: /리모트/i });
     if (query.remote === false) clauses.push({ workType: { $not: /리모트/i } });
     if (query.deadline === "urgent") { const { from, to } = urgentDeadlineRange(at); clauses.push({ expiresAt: { $gte: from, $lt: to } }); }
@@ -58,13 +60,15 @@ export function jobBoardFilter(query: ListJobPostingsQuery, at: Date, skip?: Fil
     clauses.push(query.country === UNPLACED_COUNTRY ? { $or: [inCountry, { locationRegion: null }] } : inCountry);
   }
   // 지역이 나라보다 더 좁다 — 함께 와도 안전하게 겹친다(경기는 늘 한국 안이다).
-  if (skip !== "location" && query.location) {
-    const place = koreanPlace(query.location);
-    // 장소면 거리로 건다 — 반경 안이거나, 원문에서 장소를 못 읽은 같은 지역 공고.
-    // 필드는 `nearbyStages`가 앞에서 채운다.
-    clauses.push(place
-      ? { $or: [{ nearbyDistanceKm: { $lte: NEARBY_RADIUS_KM } }, { nearbyPlace: null, locationRegion: place.region }] }
-      : { locationRegion: query.location });
+  const locations = query.locations?.length ? query.locations : query.location ? [query.location] : [];
+  if (skip !== "location" && locations.length && query.locationMode !== "prefer") {
+    const places = locations.map(koreanPlace).filter((place): place is KoreanPlace => !!place);
+    const regions = locations.filter(location => !koreanPlace(location));
+    const choices: Document[] = regions.map(locationRegion => ({ locationRegion }));
+    if (places.length) choices.push(query.locationMode === "strict"
+      ? { "nearbyPlace.name": { $in: places.map(place => place.name) } }
+      : { $or: [{ nearbyDistanceKm: { $lte: NEARBY_RADIUS_KM } }, { nearbyPlace: null, locationRegion: { $in: places.map(place => place.region) } }] });
+    clauses.push({ $or: choices });
   }
   if (skip !== "experience" && query.experience !== undefined) clauses.push({ $or: [{ experienceMinYears: null }, { experienceMinYears: { $lte: query.experience } }] });
   if (skip !== "workType" && query.workType) clauses.push({ workType: { $regex: escapeSearch(query.workType), $options: "i" } });
@@ -83,8 +87,9 @@ export function jobBoardJoins(userId: string): Document[] {
 }
 
 /** 장소로 찾을 때만 그 장소를 돌려준다. 지역(`경기`)이면 undefined. */
-export function nearbyPlaceOf(query: Pick<ListJobPostingsQuery, "location">): KoreanPlace | undefined {
-  return query.location ? koreanPlace(query.location) : undefined;
+export function nearbyPlaceOf(query: Pick<ListJobPostingsQuery, "location" | "locations">): KoreanPlace[] | undefined {
+  const places = (query.locations?.length ? query.locations : query.location ? [query.location] : []).map(koreanPlace).filter((place): place is KoreanPlace => !!place);
+  return places.length ? places : undefined;
 }
 
 /**
@@ -99,8 +104,10 @@ export function nearbyPlaceOf(query: Pick<ListJobPostingsQuery, "location">): Ko
  * 장소 이름은 그 공고의 `location_region`과 지역이 맞을 때만 읽는다 —
  * "부산 강서구"의 강서나 "인천 중구"의 중구를 서울로 읽지 않으려고.
  */
-export function nearbyStages(place: KoreanPlace | undefined): Document[] {
-  if (!place) return [];
+export function nearbyStages(input: KoreanPlace | readonly KoreanPlace[] | undefined): Document[] {
+  if (!input) return [];
+  const places = Array.isArray(input) ? input : [input as KoreanPlace];
+  if (!places.length) return [];
   const location = { $toLower: { $ifNull: ["$location", ""] } };
   const branches = KOREAN_PLACES_BY_SPECIFICITY.map((candidate) => ({
     case: {
@@ -111,11 +118,14 @@ export function nearbyStages(place: KoreanPlace | undefined): Document[] {
     },
     then: { name: candidate.name, lat: candidate.lat, lng: candidate.lng },
   }));
-  const dy = { $multiply: [{ $subtract: ["$nearbyPlace.lat", place.lat] }, KM_PER_DEGREE_LAT] };
-  const dx = { $multiply: [{ $subtract: ["$nearbyPlace.lng", place.lng] }, kmPerDegreeLng(place.lat)] };
+  const distances = places.map(place => {
+    const dy = { $multiply: [{ $subtract: ["$nearbyPlace.lat", place.lat] }, KM_PER_DEGREE_LAT] };
+    const dx = { $multiply: [{ $subtract: ["$nearbyPlace.lng", place.lng] }, kmPerDegreeLng(place.lat)] };
+    return { $sqrt: { $add: [{ $multiply: [dy, dy] }, { $multiply: [dx, dx] }] } };
+  });
   return [
     { $set: { nearbyPlace: { $switch: { branches, default: null } } } },
-    { $set: { nearbyDistanceKm: { $cond: [{ $eq: ["$nearbyPlace", null] }, null, { $sqrt: { $add: [{ $multiply: [dy, dy] }, { $multiply: [dx, dx] }] } }] } } },
+    { $set: { nearbyDistanceKm: { $cond: [{ $eq: ["$nearbyPlace", null] }, null, { $min: distances }] } } },
   ];
 }
 
@@ -126,11 +136,12 @@ export function nearbyStages(place: KoreanPlace | undefined): Document[] {
  * 순보다 앞서는 이유는, 장소를 적어 찾은 사람에게 먼저 필요한 것이 거기서
  * 다닐 수 있는 자리이기 때문이다.
  */
-export function nearbyRank(place: KoreanPlace): Document {
+export function nearbyRank(input: KoreanPlace | readonly KoreanPlace[]): Document {
+  const places = Array.isArray(input) ? input : [input as KoreanPlace];
   return {
     $switch: {
       branches: [
-        { case: { $eq: ["$nearbyPlace.name", place.name] }, then: 0 },
+        { case: { $in: ["$nearbyPlace.name", places.map(place => place.name)] }, then: 0 },
         { case: { $ne: ["$nearbyDistanceKm", null] }, then: 1 },
       ],
       default: 2,
