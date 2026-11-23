@@ -1985,7 +1985,7 @@ svg [data-morph] { transform-box: fill-box; }
         <path data-ch="a1" d="M430 102 C520 102 540 160 632 172" class="s-ar" marker-end="url(#fpo-tip)"/>
         <path data-ch="a2" d="M430 274 C520 274 540 216 632 204" class="s-ar" marker-end="url(#fpo-tip)"/>
         <circle data-ch="core" filter="url(#fpo-shc)" cx="820" cy="188" r="186" style="fill: var(--ex-bean-50); stroke: var(--ex-espresso); stroke-width: 2.5"/>
-        <g transform="translate(766 62)"><svg class="cup" viewBox="0 0 54 48" width="108" height="96" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg></g>
+        <g transform="translate(766 62)"><g data-ch="cupg"><svg class="cup" viewBox="0 0 54 48" width="108" height="96" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg></g></g>
         <text data-ch="wm" x="820" y="226" text-anchor="middle" style="font-family: var(--ex-font-brand); font-weight: 400; font-size: 64px; letter-spacing: -.03em; fill: var(--ex-ink-900)">Expre<tspan style="fill: var(--ex-espresso)">ss</tspan>o</text>
         <text data-ch="core-sub" x="820" y="276" text-anchor="middle" class="s-p" style="fill: var(--ex-bean-ink)">채용 공고에 맞춘 경험 구성</text>
         <path data-ch="a3" d="M1008 188 H1196" class="s-ar" marker-end="url(#fpo-tip)"/>
@@ -3569,6 +3569,28 @@ window.deck = new Deck();
     return out;
   }
   const enter = (el, at) => A(el, [{ opacity: 0, transform: `translateY(${RISE}px)` }, { opacity: 1, transform: 'none' }], { delay: at, duration: IN_MS });
+  /* 이어지는 조각 — 앞 조각과 새 조각이 같은 경로를 함께 움직이고, 처음 3분의 1 구간에서 서로 교차합니다.
+     도착할 때 갈아 끼우지 않으므로 순간이동처럼 보이지 않습니다. 글자 조각은 색과 굵기도 이동하며 바뀝니다. */
+  function morph(from, to, F, T, k, o = {}) {
+    const [ax, ay] = o.anchor || [.5, .5];
+    const dx = (T.x + T.w * ax) - (F.x + F.w * ax), dy = (T.y + T.h * ay) - (F.y + F.h * ay);
+    const s = k != null ? k : T.w / F.w;
+    const d = o.delay || 0, ms = o.dur || TRAVEL, X = o.cross || .22;
+    const fo = o.fromOrigin || '50% 50%', to0 = o.toOrigin || '50% 50%';
+    A(from, [
+      { transform: 'none', opacity: 1, transformOrigin: fo },
+      { opacity: 0, offset: X },
+      { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0, transformOrigin: fo },
+    ], { delay: d, duration: ms, easing: MOVE, fill: 'both' });
+    const a = { transform: `translate(${-dx}px, ${-dy}px) scale(${1 / s})`, opacity: 0, transformOrigin: to0 };
+    const b = { transform: 'none', opacity: 1, transformOrigin: to0 };
+    if (o.text) {
+      const cf = getComputedStyle(from), ct = getComputedStyle(to);
+      Object.assign(a, { color: cf.color, fontWeight: cf.fontWeight });
+      Object.assign(b, { color: ct.color, fontWeight: ct.fontWeight });
+    }
+    A(to, [a, { opacity: 1, offset: X }, b], { delay: d, duration: ms, easing: MOVE, fill: 'backwards' });
+  }
 
   /* pairs: [앞 장 선택자, 새 장 선택자, 배율] · land: 'grow' 면 새 장 조각이 살짝 커지며 받습니다.
      a · b: 구조 · 세부 묶음 선택자. at: 묶음 시각을 바꿀 때. extra: 그 장만의 한 동작. */
@@ -3581,7 +3603,7 @@ window.deck = new Deck();
        다른 열은 빠지고 「선정 배경」이 제목 자리로 커지며 옮겨 간 뒤, 본문이 문제의 흐름 순서
        (흩어진 자료 → 채용 공고 요건 → 회사별 포트폴리오 → 반복)로 쌓입니다. */
     '목차>선정 배경': {
-      pairs: [['[data-ch="toc-bg"]', '[data-ch="h2"]']],
+      pairs: [['[data-ch="toc-bg"]', '[data-ch="h2"]', null, true]],
       custom(was, now, m) {
         const POP = 'cubic-bezier(.34, 1.45, .64, 1)';
         const rise = (el, at, ms = 560, d = 20) => A(el, [{ opacity: 0, transform: `translateY(${d}px)` }, { opacity: 1, transform: 'none' }], { delay: at, duration: ms });
@@ -3596,11 +3618,8 @@ window.deck = new Deck();
           { duration: 900, easing: 'linear', fill: 'forwards' }));
         A($(was, '.head'), [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
         A($(was, '.hd'), [{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' });
-        const { from, F, T } = m[0];
-        const dx = (T.x + T.w / 2) - (F.x + F.w / 2), dy = (T.y + T.h / 2) - (F.y + F.h / 2);
-        A(from, [{ transform: 'none', opacity: 1, transformOrigin: '50% 50%' }, { opacity: 1, offset: .86 }, { transform: `translate(${dx}px, ${dy}px) scale(${T.w / F.w})`, opacity: 0, transformOrigin: '50% 50%' }],
-          { delay: 260, duration: 780, easing: MOVE, fill: 'both' });
-        A($(now, '[data-ch="h2"]'), [{ opacity: 0 }, { opacity: 1 }], { delay: 980, duration: 140, easing: 'linear' });
+        const { from, to, F, T } = m[0];
+        morph(from, to, F, T, null, { text: true, delay: 260, dur: 900 });
         rise($(now, '.head .sub'), 1000, 500, 14);
         const b = 1150;
         const ks = $$(now, '.fp-three .k');
@@ -3626,7 +3645,8 @@ window.deck = new Deck();
       land: 'grow', a: ['.tag', '.wm'], b: ['.parts'], at: [620, 820],
     },
     '이름의 뜻>서비스 개요': {
-      pairs: [['svg.big', 'svg.cup'], ['.wm > span', '[data-ch="wm"]']],
+      /* 커피잔 — 두 그림 모두 원 중심(22, 24 / 54 × 48)을 기준점으로 맞춰 교차할 때 비껴 보이지 않게 합니다. */
+      pairs: [['svg.big', '[data-ch="cupg"]', null, false, { measureTo: 'svg.cup', anchor: [22 / 54, 24 / 48], fromOrigin: '40.74% 50%', toOrigin: '43.86px 43.86px' }], ['.wm > span', '[data-ch="wm"]']],
       a: ['[data-ch="in1"]', '[data-ch="in2"]', '[data-ch="a1"]', '[data-ch="a2"]', '[data-ch="a3"]', '[data-ch="out"]', '[data-ch="core-sub"]'],
       b: ['[data-ch="loop"]', '[data-ch="loopl"]', '.ov4'], at: [620, 860],
       extra(was, now) {
@@ -3666,19 +3686,20 @@ window.deck = new Deck();
       others(wasFrame, froms).forEach((el) => A(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.985)' }], { duration: 400, fill: 'forwards' }));
     }
     /* 주인공 */
-    m.forEach(({ from, F, T, k }, i) => {
-      const dx = (T.x + T.w / 2) - (F.x + F.w / 2), dy = (T.y + T.h / 2) - (F.y + F.h / 2);
-      const s = k != null ? k : T.w / F.w;
-      A(from, [
-        { transform: 'none', opacity: 1, transformOrigin: '50% 50%' },
-        { opacity: 1, offset: plan.land === 'grow' ? .7 : .88 },
-        { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0, transformOrigin: '50% 50%' },
-      ], { delay: plan.land === 'grow' ? i * 40 : 0, duration: TRAVEL, easing: MOVE, fill: 'both' });
-    });
-    tos.forEach((to) => {
-      if (plan.land === 'grow') A(to, [{ opacity: 0, transform: 'scale(.86)', transformOrigin: '50% 50%' }, { opacity: 1, transform: 'scale(1)', transformOrigin: '50% 50%' }], { delay: TRAVEL - 260, duration: 520 });
-      else A(to, [{ opacity: 0 }, { opacity: 1 }], { delay: TRAVEL - 120, duration: 160, easing: 'linear' });
-    });
+    if (plan.land === 'grow') {
+      /* 여러 조각이 한 점으로 모여 사라지고, 그 자리의 새 조각이 살짝 커지며 받습니다(같은 것이 아니라 모이는 것). */
+      m.forEach(({ from, F, T, k }, i) => {
+        const dx = (T.x + T.w / 2) - (F.x + F.w / 2), dy = (T.y + T.h / 2) - (F.y + F.h / 2);
+        A(from, [
+          { transform: 'none', opacity: 1, transformOrigin: '50% 50%' },
+          { opacity: 1, offset: .55 },
+          { transform: `translate(${dx}px, ${dy}px) scale(${k})`, opacity: 0, transformOrigin: '50% 50%' },
+        ], { delay: i * 40, duration: TRAVEL, easing: 'cubic-bezier(.5, 0, .75, .3)', fill: 'both' });
+      });
+      tos.forEach((to) => A(to, [{ opacity: 0, transform: 'scale(.8)', transformOrigin: '50% 50%' }, { opacity: 1, transform: 'scale(1)', transformOrigin: '50% 50%' }], { delay: TRAVEL - 380, duration: 640 }));
+    } else {
+      m.forEach(({ from, to, F, T, k, text, opt }) => morph(from, to, F, T, k, Object.assign({ text }, opt)));
+    }
     /* 들어오는 장 — 구조 묶음 → 세부 묶음 */
     const pick = (sels) => sels.flatMap((s) => $$(now, s));
     const ga = pick(plan.a || []), gb = pick(plan.b || []), sk = pick(plan.skip || []);
@@ -3701,7 +3722,7 @@ window.deck = new Deck();
     if (!plan) return inner.call(this, n);
     let m = null;
     try {
-      m = plan.pairs.map(([a, b, k]) => { const from = $(was, a), to = $(target, b); return { from, to, k, F: box(from), T: box(to) }; });
+      m = plan.pairs.map(([a, b, k, text, opt = {}]) => { const from = $(was, a), to = $(target, b); return { from, to, opt, k: k == null ? null : k, text: !!text, F: box(from), T: box(opt.measureTo ? $(target, opt.measureTo) : to) }; });
     } catch (e) { m = null; }
     const r = inner.call(this, n);
     if (m) { try { if (plan.custom) plan.custom(was, target, m); else run(was, target, plan, m); } catch (e) { stop(); } }
