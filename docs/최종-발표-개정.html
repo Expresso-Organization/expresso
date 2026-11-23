@@ -2447,7 +2447,6 @@ svg [data-morph] { transform-box: fill-box; }
     </div>
     <div class="body">
       <div class="fd-done"><div class="k in in-fade dl-3">설계서의 사용자 흐름</div><ol class="in dl-4"><li><i class="ph ph-check-circle"></i><b>01</b><span>커리어 기록</span></li><li><i class="ph ph-check-circle"></i><b>02</b><span>채용 공고 탐색</span></li><li><i class="ph ph-check-circle"></i><b>03</b><span>채용 공고 분석</span></li><li><i class="ph ph-check-circle"></i><b>04</b><span>재료 고르기</span></li><li><i class="ph ph-check-circle"></i><b>05</b><span>AI 대화</span></li><li><i class="ph ph-check-circle"></i><b>06</b><span>레시피</span></li><li><i class="ph ph-check-circle"></i><b>07</b><span>디자인 선택</span></li><li><i class="ph ph-check-circle"></i><b>08</b><span>다듬기</span></li><li><i class="ph ph-check-circle"></i><b>09</b><span>배포</span></li><li><i class="ph ph-check-circle"></i><b>10</b><span>방문자 데이터 분석</span></li></ol></div>
-      </div>
     </div>
   </div>
 </section>
@@ -3377,15 +3376,23 @@ window.deck = new Deck();
       if (over) { over.classList.remove('on'); over.setAttribute('hidden', ''); }
     },
   };
-  /* 양식은 templates/ 안에, 복사본은 docs/ 바로 아래에 놓입니다. */
+  /* 작업대(deck.py)에서 열면 작업대의 편집기(상단 편집 바 · 슬라이드 목록)를,
+     그 밖에서는 저장소에 복사해 둔 편집기를 씁니다. 미리보기에서는 붙이지 않습니다. */
   (() => {
-    const tag = document.createElement('script');
-    tag.src = location.pathname.includes('/templates/') ? 'deck-editor.js' : 'templates/deck-editor.js';
-    tag.defer = true;
-    /* 저장할 때 걷히도록 표를 답니다 — 안 그러면 이 태그가 파일에 박혀
-       다음에 열 때 도구가 두 번 실행됩니다. */
-    tag.setAttribute('data-deck-editor', '');
-    document.head.appendChild(tag);
+    if (new URLSearchParams(location.search).has('preview')) return;
+    const local = location.pathname.includes('/templates/') ? 'deck-editor.js' : 'templates/deck-editor.js';
+    const load = (src) => {
+      const tag = document.createElement('script');
+      tag.src = src;
+      tag.defer = true;
+      /* 저장할 때 걷히도록 표를 답니다 — 안 그러면 이 태그가 파일에 박혀
+         다음에 열 때 도구가 두 번 실행됩니다. */
+      tag.setAttribute('data-deck-editor', '');
+      document.head.appendChild(tag);
+    };
+    fetch('/__decks', { method: 'HEAD' })
+      .then((r) => load(r.ok ? '/__deck/editor.js' : local))
+      .catch(() => load(local));
   })();
 </script>
 
