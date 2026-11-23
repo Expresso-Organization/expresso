@@ -1832,6 +1832,18 @@ svg [data-morph] { transform-box: fill-box; }
 .rx-part.cam { left: -104px; top: -286px; width: 1920px; height: 1080px; transition: opacity 520ms cubic-bezier(.2,.8,.2,1), transform 720ms cubic-bezier(.2,.8,.2,1);
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 110px, #000 calc(100% - 140px), transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 110px, #000 calc(100% - 140px), transparent 100%); }
 .rx-part.cam .rx-host { transition: none; }
+.rx-steps { position: absolute; right: 0; top: -116px; display: flex; align-items: center; gap: 14px; font-size: 21px; letter-spacing: -.01em; }
+.rx-steps .st { display: flex; align-items: center; gap: 10px; color: #8a96a8; font-weight: 500; white-space: nowrap; transition: color 400ms ease; }
+.rx-steps .dot { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font: 600 13px/1 'JetBrains Mono', ui-monospace, monospace; color: #8a96a8; background: #fff; box-shadow: inset 0 0 0 1.5px #dfe5ee; transition: background 400ms ease, color 400ms ease, box-shadow 400ms ease, transform 500ms cubic-bezier(.2,.8,.2,1); }
+.rx-steps .dot i { display: none; font-size: 15px; }
+.rx-steps .ln { width: 52px; height: 1.5px; background: #e3e8f0; }
+.rx-steps .st.done { color: #4a5872; }
+.rx-steps .st.done .dot { background: #eef2f7; box-shadow: none; color: #6b7890; }
+.rx-steps .st.done .dot b { display: none; }
+.rx-steps .st.done .dot i { display: block; }
+.rx-steps .st.now { color: var(--ex-ink-900); font-weight: 700; }
+.rx-steps .st.now .dot { background: var(--ex-espresso); color: #fff; box-shadow: none; transform: scale(1.08); }
+.rx-part.full .rx-host { border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 0 0 1px rgba(22,34,58,.08), 0 24px 64px rgba(22,34,58,.14), 0 4px 12px rgba(22,34,58,.06); }
 .rx-note.big .k { font-size: 30px; }
 .rx-note.big .t { margin-top: 14px; font-size: 64px; font-weight: 700; line-height: 1.15; letter-spacing: -.035em; }
 .rx-note .t { margin-top: 10px; font-size: 34px; font-weight: 600; line-height: 1.32; letter-spacing: -.03em; color: var(--ex-ink-900); word-break: keep-all; }
@@ -2064,7 +2076,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">문장으로 찾고, 일치도와 요건별 근거로 고르는 채용 공고</p>
     </div>
     <div class="body"><div class="rx-stage"></div></div>
-    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']"], "pad": 32, "css": "[class*='__parsedRow'] > *:not([data-rx-go]){opacity:0!important}", "fly": {"input": "[class*='__queryText']", "row": "[class*='__parsedRow']", "label": "[class*='__parsedLabel']", "chip": "button[class*='__parsedChip']", "rest": "[class*='__parsedAdd'], [class*='__parsedSaveForm']", "words": [{"w": "서울", "chip": 0}, {"w": "프로덕트 데이터 분석가", "chip": 1}], "note": "n1", "step": 1, "cam": ["rest", 640, 1500, "fly"], "noteAt": 1750}, "cam": {"type0": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 600, "k": 3.25}, "type1": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 600, "k": 3.6}, "rest": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 440, "k": 2.85}, "top": {"sel": "[class*='__queryCard']", "fx": 0, "fy": 0, "x": 104, "y": 320, "k": 0.9}}}, "results": {"sel": ["[class*='__results ']", "[class*='__results']"], "clip": "[class*='__rows'] > :nth-child(3)", "pad": 32, "fade": true, "reveal": {"sel": "[class*='__resultsHead'], [class*='__rows'] > *", "gap": 90}}, "reqs": {"sel": ["[class*='qBDErq__section']"], "text": "자격 요건", "pad": 32, "style": "width: 760px; max-width: 760px;", "reveal": {"sel": "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", "gap": 150}}}, "notes": {"n1": {"x": 226, "y": 434, "w": 1500, "big": true, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 960, "y": 300, "w": 700, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 1230, "y": 300, "w": 480, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "seek", "search", 3950], [0, "cam", "search", "type0"], [0, "show", "search"], [400, "play", "search", 3950, 7000], [400, "cam", "search", "type1", 3100, "sine"], [3500, "seek", "search", 7950]], "settle": 6200}, {"do": [[0, "hide", "n1"], [80, "cam", "search", "top", 900, "fly"], [640, "seek", "results", 9300], [640, "place", "results", 0, 170, 1.22], [640, "show", "results"], [900, "play", "results", 9300, 11420], [1500, "note", "n2"]], "settle": 4200}, {"do": [[0, "hide", "n2"], [0, "out", "search"], [0, "out", "results"], [240, "seek", "reqs", 16800], [240, "place", "reqs", 0, 150, 1.5], [240, "show", "reqs"], [1500, "note", "n3"]], "settle": 3500}]}</script>
+    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']"], "pad": 32, "css": "[class*='__parsedRow'] > *:not([data-rx-go]){opacity:0!important}", "fly": {"input": "[class*='__queryText']", "row": "[class*='__parsedRow']", "label": "[class*='__parsedLabel']", "chip": "button[class*='__parsedChip']", "rest": "[class*='__parsedAdd'], [class*='__parsedSaveForm']", "words": [{"w": "서울", "chip": 0}, {"w": "프로덕트 데이터 분석가", "chip": 1}], "note": "n1", "step": 1, "cam": ["rest", 640, 1500, "fly"], "noteAt": 1750}, "cam": {"type0": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 600, "k": 3.25}, "type1": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 600, "k": 3.6}, "rest": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 440, "k": 2.85}, "top": {"sel": "[class*='__queryCard']", "fx": 0, "fy": 0, "x": 104, "y": 320, "k": 0.9}, "full": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 829.5, "y": 390.4, "k": 0.74}}}, "page": {"follow": "search", "full": true, "cam": {}}, "results": {"sel": ["[class*='__results ']", "[class*='__results']"], "clip": "[class*='__rows'] > :nth-child(3)", "pad": 32, "fade": true, "reveal": {"sel": "[class*='__resultsHead'], [class*='__rows'] > *", "gap": 90}}, "reqs": {"sel": ["[class*='qBDErq__section']"], "text": "자격 요건", "pad": 32, "style": "width: 760px; max-width: 760px;", "reveal": {"sel": "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", "gap": 150}}}, "notes": {"n1": {"x": 226, "y": 434, "w": 1500, "big": true, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 960, "y": 300, "w": 700, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 1230, "y": 300, "w": 480, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "stage", null, 0], [0, "seek", "search", 3950], [0, "seek", "page", 3950], [0, "cam", "search", "full"], [0, "show", "search"], [0, "show", "page"], [1000, "cam", "search", "type0", 1600, "fly"], [1350, "dissolve", "page", 1000], [2400, "play", "search", 3950, 7000], [2400, "cam", "search", "type1", 3100, "sine"], [5500, "seek", "search", 7950], [5600, "stage", null, 1]], "settle": 8200}, {"do": [[0, "stage", null, 2], [0, "hide", "n1"], [80, "cam", "search", "top", 900, "fly"], [640, "seek", "results", 9300], [640, "place", "results", 0, 170, 1.22], [640, "show", "results"], [900, "play", "results", 9300, 11420], [1500, "note", "n2"]], "settle": 4200}, {"do": [[0, "stage", null, 3], [0, "hide", "n2"], [0, "out", "search"], [0, "out", "results"], [240, "seek", "reqs", 16800], [240, "place", "reqs", 0, 150, 1.5], [240, "show", "reqs"], [1500, "note", "n3"]], "settle": 3500}], "stages": ["문장 입력", "조건 해석", "일치도 정렬", "요건별 근거"]}</script>
   </div>
 </section>
 
@@ -3382,6 +3394,8 @@ window.deck = new Deck();
     camApply(p);
   };
   const update = (p, instant) => {
+    /* 전체 화면 층은 기준 부품의 카메라를 그대로 따라가 두 층이 정확히 겹칩니다. */
+    if (p.cfg.follow) { const L = p.st.parts[p.cfg.follow]; if (L && p.host.style.transform !== L.host.style.transform) p.host.style.transform = L.host.style.transform; return true; }
     const el = findEl(p); const d = docOf(p);
     if (d) d.querySelectorAll('[data-rx-keep]').forEach((x) => { if (x !== el) x.removeAttribute('data-rx-keep'); });
     if (!el) return false;
@@ -3424,7 +3438,7 @@ window.deck = new Deck();
     const ev = window.__rrData[cfg.scene]; const stage = s.querySelector('.rx-stage');
     const parts = {}, notes = {};
     for (const [id, c] of Object.entries(cfg.parts)) {
-      const el = document.createElement('div'); el.className = 'rx-part' + (c.fade ? ' fade' : '') + (c.cam ? ' cam' : '');
+      const el = document.createElement('div'); el.className = 'rx-part' + (c.fade ? ' fade' : '') + (c.cam ? ' cam' : '') + (c.full ? ' full' : '');
       const host = document.createElement('div'); host.className = 'rx-host'; el.appendChild(host); stage.appendChild(el);
       // rrweb는 재생하면서 이벤트의 삭제 목록을 제자리에서 고쳐 쓴다. 재생기끼리 같은 배열을 쓰면 삭제가 사라지므로 재생기마다 복사본을 준다.
       const r = new rrweb.Replayer(structuredClone(ev), { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
@@ -3436,14 +3450,30 @@ window.deck = new Deck();
       el.innerHTML = `<div class="k"></div><div class="t"></div>`; el.querySelector('.k').textContent = n.k; el.querySelector('.t').textContent = n.t;
       stage.appendChild(el); notes[id] = { el, timer: null };
     }
-    const st = { cfg, parts, notes, slide: s }; Object.values(parts).forEach((p) => { p.st = st; }); state.set(s, st); return st;
+    /* 제품의 진행 표시와 같은 모양으로 이 장의 단계를 보여 줍니다. */
+    let stages = null;
+    if (cfg.stages) {
+      const el = document.createElement('div'); el.className = 'rx-steps';
+      cfg.stages.forEach((name, i) => {
+        if (i) { const ln = document.createElement('span'); ln.className = 'ln'; el.appendChild(ln); }
+        const it = document.createElement('span'); it.className = 'st';
+        it.innerHTML = `<span class="dot"><b></b><i class="ph ph-check"></i></span><span class="nm"></span>`;
+        it.querySelector('b').textContent = String(i + 1).padStart(2, '0'); it.querySelector('.nm').textContent = name;
+        el.appendChild(it);
+      });
+      stage.appendChild(el); stages = [...el.querySelectorAll('.st')];
+    }
+    const st = { cfg, parts, notes, slide: s, stages }; Object.values(parts).forEach((p) => { p.st = st; }); state.set(s, st); return st;
   };
   const timers = [];
   const run = (st, act, instant) => {
     const [, op, id, a, b, c] = act; const p = st.parts[id]; const n = st.notes[id];
     if (op === 'place') { p.at = { x: a, y: b, k: c }; if (instant || !p.shown) update(p, true); }
     else if (op === 'quiet') p.quiet = !!a;
+    else if (op === 'stage') (st.stages || []).forEach((x, i) => { x.classList.toggle('done', i < a); x.classList.toggle('now', i === a); });
     else if (op === 'cam') camTo(p, a, instant ? 0 : b, c);
+    /* 자리는 그대로 두고 투명도만 낮춰, 주변 화면이 녹아 사라지게 합니다. */
+    else if (op === 'dissolve') { p.el.style.transition = instant ? 'none' : `opacity ${a}ms cubic-bezier(.4,0,.2,1)`; p.el.style.opacity = '0'; }
     else if (op === 'show') {
       p.el.classList.remove('leave');
       if (!p.shown) { update(p, true); p.shown = true; }
@@ -3460,10 +3490,11 @@ window.deck = new Deck();
   const reset = (st) => {
     clearAll(st);
     Object.values(st.parts).forEach((p) => {
-      flyClear(p); p.cam = null; p.r.pause(0); p.shown = false; p.el.classList.remove('on', 'leave');
+      flyClear(p); p.cam = null; p.el.style.opacity = ''; p.el.style.transition = ''; p.r.pause(0); p.shown = false; p.el.classList.remove('on', 'leave');
       const d = docOf(p); if (d) d.querySelectorAll('[data-rx-seen]').forEach((x) => { x.removeAttribute('data-rx-seen'); x.style.opacity = ''; x.style.transform = ''; x.style.transition = ''; });
     });
     Object.values(st.notes).forEach((n) => n.el.classList.remove('on'));
+    (st.stages || []).forEach((x) => x.classList.remove('done', 'now'));
   };
   /* 단계 m까지의 끝 상태를 즉시 만듭니다. 뒤로 갈 때와, 앞 단계의 움직임이 끝나기 전에 넘길 때 씁니다. */
   const settle = (st, m) => {
