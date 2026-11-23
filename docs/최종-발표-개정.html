@@ -1394,6 +1394,10 @@ svg [data-morph] { transform-box: fill-box; }
 .ov4 .st span { font-size: 22px; line-height: 1.4; letter-spacing: -.02em; color: var(--ex-slate-500); word-break: keep-all; }
 .ov4 .g1 b i { color: #3D6FA8; } .ov4 .g2 b i { color: #2F7A5F; } .ov4 .g3 b i { color: #9A4030; } .ov4 .g4 b i { color: #5F4E9C; }
 .ov4 .ar { align-self: center; justify-self: center; font-size: 28px; color: var(--ex-slate-400); }
+/* 1 ~ 7쪽 전환 연출의 조각 표시 — SVG 조각도 제 상자 가운데를 축으로 움직입니다 */
+[data-ch] { transform-box: fill-box; transform-origin: 50% 50%; }
+/* 연출이 붙은 전환에서는 차례로 올라오는 등장을 끄고 한 번에 밝아지게 합니다 */
+.deck-stage.calm > .slide.active .in { animation: none !important; opacity: 1; transform: none; }
 
 /* 추천 모델 성능 — 측정값이 들어올 빈 차트 */
 .fd-ndcg svg { width: 100%; height: auto; display: block; }
@@ -1885,7 +1889,7 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="head in dl-2"><h2>목차</h2></div>
     <div class="body">
       <div class="fp-cols fp-toc fd-toc">
-        <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li>선정 배경</li></ul></div>
+        <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li><span data-ch="toc-bg" style="display: inline-block">선정 배경</span></li></ul></div>
         <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>이름의 뜻</li><li>서비스 개요</li><li>벤치마킹 사례와 차별점</li><li>주요 기능</li><li>주요 기능 화면</li></ul></div>
         <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 개발 목표</li><li>추천 모델 아키텍처</li><li>추천 모델 학습 데이터</li><li>추천 모델 평가 결과</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
@@ -1902,7 +1906,7 @@ svg [data-morph] { transform-box: fill-box; }
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">1</span><span class="sec">문제의식</span><span class="pg"></span></div>
     <div class="head in dl-2">
-      <h2>선정 배경</h2>
+      <h2><span data-ch="h2" style="display: inline-block">선정 배경</span></h2>
       <p class="sub">지원하는 회사마다 반복되는 포트폴리오 제작</p>
     </div>
     <div class="body">
@@ -1974,22 +1978,22 @@ svg [data-morph] { transform-box: fill-box; }
           <filter id="fpo-sh" x="-20%" y="-30%" width="140%" height="180%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#16223a" flood-opacity=".07"/></filter><filter id="fpo-shc" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#9a4030" flood-opacity=".12"/></filter>
           <marker id="fpo-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill: var(--ex-slate-400)"/></marker>
         </defs>
-        <rect filter="url(#fpo-sh)" x="0" y="40" width="430" height="124" rx="22" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"/>
-        <text x="36" y="94" class="s-t">커리어 기록</text><text x="36" y="134" class="s-p">쌓아 둔 경험과 성과</text>
-        <rect filter="url(#fpo-sh)" x="0" y="212" width="430" height="124" rx="22" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"/>
-        <text x="36" y="266" class="s-t">채용 공고</text><text x="36" y="306" class="s-p">지원하려는 채용 공고</text>
-        <path d="M430 102 C520 102 540 160 632 172" class="s-ar" marker-end="url(#fpo-tip)"/>
-        <path d="M430 274 C520 274 540 216 632 204" class="s-ar" marker-end="url(#fpo-tip)"/>
-        <circle filter="url(#fpo-shc)" cx="820" cy="188" r="186" style="fill: var(--ex-bean-50); stroke: var(--ex-espresso); stroke-width: 2.5"/>
+        <rect data-ch="in1" filter="url(#fpo-sh)" x="0" y="40" width="430" height="124" rx="22" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"/>
+        <text data-ch="in1" x="36" y="94" class="s-t">커리어 기록</text><text data-ch="in1" x="36" y="134" class="s-p">쌓아 둔 경험과 성과</text>
+        <rect data-ch="in2" filter="url(#fpo-sh)" x="0" y="212" width="430" height="124" rx="22" style="fill: var(--fp-in); stroke: var(--fp-in-line); stroke-width: 1.5"/>
+        <text data-ch="in2" x="36" y="266" class="s-t">채용 공고</text><text data-ch="in2" x="36" y="306" class="s-p">지원하려는 채용 공고</text>
+        <path data-ch="a1" d="M430 102 C520 102 540 160 632 172" class="s-ar" marker-end="url(#fpo-tip)"/>
+        <path data-ch="a2" d="M430 274 C520 274 540 216 632 204" class="s-ar" marker-end="url(#fpo-tip)"/>
+        <circle data-ch="core" filter="url(#fpo-shc)" cx="820" cy="188" r="186" style="fill: var(--ex-bean-50); stroke: var(--ex-espresso); stroke-width: 2.5"/>
         <g transform="translate(766 62)"><svg class="cup" viewBox="0 0 54 48" width="108" height="96" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg></g>
-        <text x="820" y="226" text-anchor="middle" style="font-family: var(--ex-font-brand); font-weight: 400; font-size: 64px; letter-spacing: -.03em; fill: var(--ex-ink-900)">Expre<tspan style="fill: var(--ex-espresso)">ss</tspan>o</text>
-        <text x="820" y="276" text-anchor="middle" class="s-p" style="fill: var(--ex-bean-ink)">채용 공고에 맞춘 경험 구성</text>
-        <path d="M1008 188 H1196" class="s-ar" marker-end="url(#fpo-tip)"/>
-        <rect filter="url(#fpo-sh)" x="1210" y="112" width="502" height="152" rx="22" style="fill: var(--fp-out); stroke: var(--fp-out-line); stroke-width: 1.5"/>
-        <text x="1246" y="178" class="s-t" style="font-size: 36px">맞춤 포트폴리오</text><text x="1246" y="222" class="s-p">공개 주소로 배포</text>
-        <path d="M1460 268 V330 Q1460 372 1418 372 H1010 Q968 372 954 332" class="s-ard" marker-end="url(#fpo-tip)"/>
-        <rect x="1070" y="352" width="330" height="40" style="fill: var(--ex-surface-50)"/>
-        <text x="1235" y="382" text-anchor="middle" class="s-p">방문 분석 → 다음 포트폴리오 개선</text>
+        <text data-ch="wm" x="820" y="226" text-anchor="middle" style="font-family: var(--ex-font-brand); font-weight: 400; font-size: 64px; letter-spacing: -.03em; fill: var(--ex-ink-900)">Expre<tspan style="fill: var(--ex-espresso)">ss</tspan>o</text>
+        <text data-ch="core-sub" x="820" y="276" text-anchor="middle" class="s-p" style="fill: var(--ex-bean-ink)">채용 공고에 맞춘 경험 구성</text>
+        <path data-ch="a3" d="M1008 188 H1196" class="s-ar" marker-end="url(#fpo-tip)"/>
+        <rect data-ch="out" filter="url(#fpo-sh)" x="1210" y="112" width="502" height="152" rx="22" style="fill: var(--fp-out); stroke: var(--fp-out-line); stroke-width: 1.5"/>
+        <text data-ch="out" x="1246" y="178" class="s-t" style="font-size: 36px">맞춤 포트폴리오</text><text data-ch="out" x="1246" y="222" class="s-p">공개 주소로 배포</text>
+        <path data-ch="loop" d="M1460 268 V330 Q1460 372 1418 372 H1010 Q968 372 954 332" class="s-ard" marker-end="url(#fpo-tip)"/>
+        <rect data-ch="loopl" x="1070" y="352" width="330" height="40" style="fill: var(--ex-surface-50)"/>
+        <text data-ch="loopl" x="1235" y="382" text-anchor="middle" class="s-p">방문 분석 → 다음 포트폴리오 개선</text>
       </svg>
       <div class="ov4"><div class="st g1 in dl-4"><b><i class="ph ph-notebook"></i>커리어 기록</b><span>프로젝트 · 활동 · 성과를 쌓아 두는 기록</span></div><i class="ph ph-caret-right ar in in-fade dl-5"></i><div class="st g2 in dl-5"><b><i class="ph ph-magnifying-glass"></i>채용 공고 검색</b><span>내 기록에 맞는 채용 공고 추천 · 요건 분석</span></div><i class="ph ph-caret-right ar in in-fade dl-5"></i><div class="st g3 in dl-6"><b><i class="ph ph-stack"></i>포트폴리오 생성</b><span>채용 공고 요건에 맞춰 경험을 골라 구성</span></div><i class="ph ph-caret-right ar in in-fade dl-5"></i><div class="st g4 in dl-7"><b><i class="ph ph-chart-line-up"></i>배포와 분석</b><span>공개 주소 배포 · 방문 데이터로 개선</span></div></div>
     </div>
@@ -3529,6 +3533,143 @@ window.deck = new Deck();
 <!-- 글 고치기 · 장 다루기 · 파일에 바로 저장 —
      여러 발표 자료가 함께 쓰는 도구입니다(docs/templates/deck-editor.js).
      이 파일이 없어도 발표는 그대로 돌아갑니다. -->
+<script>
+/* 1 ~ 7쪽 전환 연출 — 앞으로 한 장 넘길 때만 돕니다(뒤로 · 건너뛰기 · 9쪽을 포함한 다른 장은 기존 처리).
+   원칙: 장마다 주인공 하나 — 두 장에 이어지는 조각이 제자리로 옮겨 갑니다.
+   나머지는 두 묶음으로만 들어옵니다(구조 → 세부). 나가는 장은 한 덩어리로 조금 물러나며 흐려집니다.
+   DOM 을 바꾸지 않고 WAAPI 로만 움직이므로 저장한 파일은 그대로입니다. */
+(() => {
+  const deck = window.deck; if (!deck) return;
+  const STAGE = document.getElementById('deckStage');
+  const still = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const MOVE = 'cubic-bezier(.65, 0, .35, 1)';
+  const SOFT = 'cubic-bezier(.22, .61, .36, 1)';
+  const TRAVEL = 850;               // 주인공이 옮겨 가는 시간
+  const A_AT = 480, B_AT = 720;      // 구조 묶음 · 세부 묶음이 들어오는 때
+  const IN_MS = 560, RISE = 14;
+  let running = [];
+  const stop = () => { running.forEach((a) => { try { a.cancel(); } catch (e) {} }); running = []; };
+  const A = (el, kf, o) => { if (!el) return null; const a = el.animate(kf, Object.assign({ fill: 'backwards', easing: SOFT }, o)); running.push(a); return a; };
+  const $ = (r, s) => r.querySelector(s);
+  const $$ = (r, s) => [...r.querySelectorAll(s)];
+  const box = (el) => {
+    const s = STAGE.getBoundingClientRect(), r = el.getBoundingClientRect(), f = s.width / 1920;
+    return { x: (r.left - s.left) / f, y: (r.top - s.top) / f, w: r.width / f, h: r.height / f };
+  };
+  function others(root, keep) {
+    const path = new Set();
+    keep.forEach((n) => { let c = n; while (c && c !== root) { path.add(c); c = c.parentElement; } });
+    const out = [];
+    (function walk(el) {
+      for (const kid of el.children) {
+        if (keep.includes(kid)) continue;
+        if (path.has(kid)) walk(kid); else out.push(kid);
+      }
+    })(root);
+    return out;
+  }
+  const enter = (el, at) => A(el, [{ opacity: 0, transform: `translateY(${RISE}px)` }, { opacity: 1, transform: 'none' }], { delay: at, duration: IN_MS });
+
+  /* pairs: [앞 장 선택자, 새 장 선택자, 배율] · land: 'grow' 면 새 장 조각이 살짝 커지며 받습니다.
+     a · b: 구조 · 세부 묶음 선택자. at: 묶음 시각을 바꿀 때. extra: 그 장만의 한 동작. */
+  const PLAN = {
+    '표지>목차': {
+      whole: true, pairs: [],
+      a: ['.head', '.fd-toc .n'], b: ['.fd-toc .t', '.fd-toc ul'], at: [380, 560],
+    },
+    '목차>선정 배경': {
+      pairs: [['[data-ch="toc-bg"]', '[data-ch="h2"]']],
+      a: ['.head .sub', '.fp-three > :not(.fp-repeat)'], b: ['.fp-repeat'],
+    },
+    '선정 배경>이름의 뜻': {
+      pairs: [['.fp-page:nth-child(1)', 'svg.big', .14], ['.fp-page:nth-child(2)', 'svg.big', .14], ['.fp-page:nth-child(3)', 'svg.big', .14]],
+      land: 'grow', a: ['.tag', '.wm'], b: ['.parts'], at: [620, 820],
+    },
+    '이름의 뜻>서비스 개요': {
+      pairs: [['svg.big', 'svg.cup'], ['.wm > span', '[data-ch="wm"]']],
+      a: ['[data-ch="in1"]', '[data-ch="in2"]', '[data-ch="a1"]', '[data-ch="a2"]', '[data-ch="a3"]', '[data-ch="out"]', '[data-ch="core-sub"]'],
+      b: ['[data-ch="loop"]', '[data-ch="loopl"]', '.ov4'], at: [620, 860],
+      extra(was, now) {
+        A($(now, '[data-ch="core"]'), [{ opacity: 0, transform: 'scale(.3)' }, { opacity: 1, transform: 'scale(1)' }], { delay: 200, duration: 800, easing: SOFT });
+      },
+      skip: ['[data-ch="core"]'],
+    },
+    '서비스 개요>벤치마킹 사례와 차별점': {
+      pairs: [1, 2, 3, 4].map((g) => [`.ov4 .st.g${g}`, `.cov .sh.g${g}`]),
+      a: ['.cov .rh', '.cov .nm:not(.ex)', '.cov .c:not(.on)', '.cov .rs:not(.ex)', '.cov .sep'],
+      b: ['.cov .nm.ex', '.cov .rs.ex', '.cov .lg'],
+      extra(was, now) {
+        /* 이 장의 요점 — Expresso 줄이 네 단계를 한 번에 그어 덮습니다. */
+        $$(now, '.cov .c.on').forEach((el, i) => A(el, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], { delay: B_AT + 80 + i * 120, duration: 170, easing: 'linear' }));
+      },
+      skip: ['.cov .c.on'],
+    },
+    '벤치마킹 사례와 차별점>주요 기능': {
+      pairs: [1, 2, 3, 4].map((g) => [`.cov .sh.g${g}`, `.fp-line .band.g${g} b`, 1]),
+      a: ['.fp-line .band', '.fp-line .lane', '.fp-line svg.under', '.fp-line .st'],
+      b: ['.fp-line .st .tag', '.fp-line .loop', '.fp-line .ad'], at: [340, 800],
+    },
+  };
+
+  function run(was, now, plan, m) {
+    const wasFrame = $(was, '.frame'), nowFrame = $(now, '.frame');
+    const froms = m.map((x) => x.from), tos = [...new Set(m.map((x) => x.to))];
+    const [aAt, bAt] = plan.at || [A_AT, B_AT];
+    const hold = TRAVEL + 120;
+    /* 나가는 장 */
+    if (plan.whole) {
+      A(was, [{ visibility: 'visible', opacity: 1, zIndex: 3 }, { visibility: 'visible', opacity: 0, zIndex: 3 }], { duration: 520, fill: 'none' });
+      A(wasFrame, [{ opacity: 1, transform: 'none' }, { opacity: 1, transform: 'scale(.97)' }], { duration: 720, fill: 'none' });
+    } else {
+      A(was, [{ visibility: 'visible', opacity: 1, zIndex: 3, background: 'transparent' }, { visibility: 'visible', opacity: 1, zIndex: 3, background: 'transparent' }], { duration: hold, fill: 'none', easing: 'linear' });
+      A(wasFrame, [{ opacity: 1 }, { opacity: 1 }], { duration: hold, fill: 'none' });
+      others(wasFrame, froms).forEach((el) => A(el, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(.985)' }], { duration: 400, fill: 'forwards' }));
+    }
+    /* 주인공 */
+    m.forEach(({ from, F, T, k }, i) => {
+      const dx = (T.x + T.w / 2) - (F.x + F.w / 2), dy = (T.y + T.h / 2) - (F.y + F.h / 2);
+      const s = k != null ? k : T.w / F.w;
+      A(from, [
+        { transform: 'none', opacity: 1, transformOrigin: '50% 50%' },
+        { opacity: 1, offset: plan.land === 'grow' ? .7 : .88 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${s})`, opacity: 0, transformOrigin: '50% 50%' },
+      ], { delay: plan.land === 'grow' ? i * 40 : 0, duration: TRAVEL, easing: MOVE, fill: 'both' });
+    });
+    tos.forEach((to) => {
+      if (plan.land === 'grow') A(to, [{ opacity: 0, transform: 'scale(.86)', transformOrigin: '50% 50%' }, { opacity: 1, transform: 'scale(1)', transformOrigin: '50% 50%' }], { delay: TRAVEL - 260, duration: 520 });
+      else A(to, [{ opacity: 0 }, { opacity: 1 }], { delay: TRAVEL - 120, duration: 160, easing: 'linear' });
+    });
+    /* 들어오는 장 — 구조 묶음 → 세부 묶음 */
+    const pick = (sels) => sels.flatMap((s) => $$(now, s));
+    const ga = pick(plan.a || []), gb = pick(plan.b || []), sk = pick(plan.skip || []);
+    ga.forEach((el) => enter(el, aAt));
+    gb.forEach((el) => enter(el, bAt));
+    others(nowFrame, [...tos, ...ga, ...gb, ...sk]).forEach((el) => A(el, [{ opacity: 0 }, { opacity: 1 }], { delay: plan.whole ? 260 : aAt - 120, duration: IN_MS }));
+    if (plan.extra) plan.extra(was, now);
+    STAGE.classList.add('calm');
+  }
+
+  const title = (s) => (s ? s.dataset.title : '');
+  const inner = deck.show;
+  deck.show = function (n) {
+    stop();
+    STAGE.classList.remove('calm');
+    const was = document.querySelector('.deck-stage > .slide.active');
+    const list = deck.slides || [...document.querySelectorAll('.deck-stage > .slide')];
+    const target = list[n];
+    const plan = (!still.matches && was && target && n === (deck.i ?? -1) + 1) ? PLAN[`${title(was)}>${title(target)}`] : null;
+    if (!plan) return inner.call(this, n);
+    let m = null;
+    try {
+      m = plan.pairs.map(([a, b, k]) => { const from = $(was, a), to = $(target, b); return { from, to, k, F: box(from), T: box(to) }; });
+    } catch (e) { m = null; }
+    const r = inner.call(this, n);
+    if (m) { try { run(was, target, plan, m); } catch (e) { stop(); } }
+    return r;
+  };
+})();
+</script>
+
 <script>
   window.deckEditorConfig = {
     slides: '.slide',
