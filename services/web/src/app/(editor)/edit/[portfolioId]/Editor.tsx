@@ -22,6 +22,7 @@ import { AgentChat } from "@/features/agent-chat/AgentChat";
 import { ElementProperties } from "./ElementProperties";
 import { PageOutline } from "./PageOutline";
 import { RecordLibrary, type LibraryRecord } from "./RecordLibrary";
+import { StructuredHistoryPanel } from "./StructuredHistory";
 
 import {
   baseStep,
@@ -154,6 +155,7 @@ export function Editor({
     setPicked({ key, part });
     if (scroll) setScrollRequest((count) => count + 1);
   }, []);
+  const structuredKeys = useMemo(() => new Set(Object.keys(structured?.spec.elements ?? {})), [structured]);
   const pickedNode = pickedKey ? structured?.spec.elements[pickedKey] : undefined;
   const pickedBinding = (pickedNode?.props as { section?: { $state?: string } } | undefined)?.section?.$state;
   // 사례는 섹션 제목으로, 나머지(큰 인용 · 수치 띠 · 목차 …)는 부품 이름으로 부른다.
@@ -881,7 +883,7 @@ export function Editor({
               <span className={styles.panelTitle}>편집</span>
               <span className={styles.panelTarget}>
                 {generatedPage
-                  ? (tab === "history" ? `판 ${generatedPageHistory.length}개` : structured ? (pickedLabel ?? "지면 전체") : "웹페이지 전체")
+                  ? (tab === "history" ? (structured ? `변경 ${generatedPageHistory.length}건` : `판 ${generatedPageHistory.length}개`) : structured ? (pickedLabel ?? "지면 전체") : "웹페이지 전체")
                   : panelTarget(tab, revisions.length, chosen?.path ?? null)}
               </span>
               <button
@@ -978,7 +980,15 @@ export function Editor({
               </>
             ) : null}
             {tab === "history" ? (
-              generatedPage ? (
+              structured && generatedPage ? (
+                <StructuredHistoryPanel
+                  pages={generatedPageHistory}
+                  portfolioId={portfolio.id}
+                  displayName={displayName}
+                  elementKeys={structuredKeys}
+                  onPick={(key) => pickElement(key, null, true)}
+                />
+              ) : generatedPage ? (
                 <FreePageHistoryPanel pages={generatedPageHistory} portfolioId={portfolio.id} />
               ) : (
                 <HistoryPanel

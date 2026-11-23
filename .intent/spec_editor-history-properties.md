@@ -12,7 +12,7 @@ date: 2026-11-24
 ## 요구사항
 
 - [ ] 구조화 지면의 새 판은 저장할 때 `change { actor, kind, summary }`를 남긴다. 생성 · 다듬기 · 에이전트 고침은 `ai`, 직접 편집 · 기록 추가 · 판 복원 · 변경 되돌리기는 `user`다.
-- [ ] `change`가 없는 옛 판도 `history`가 `instruction` · `generationJobId` · 다른 판의 `refinement.revisionId`로 종류와 요약을 추정해 내려준다.
+- [ ] `change`가 없는 옛 판도 `history`가 `instruction` · `generationJobId` · 다른 판의 `refinement.revisionId`로 종류와 요약을 추정해 내려준다. 지시문만 남은 옛 판은 에이전트 고침인지 지시로 다시 만든 판인지 가릴 수 없어 `generated`(복원으로만 무름)로 둔다. 되돌리기 가능한 종류 표(`PAGE_REVERTIBLE_CHANGE_KINDS`)는 계약에 두고 서버와 화면이 함께 쓴다.
 - [ ] `GET …/page/history`의 각 판은 바로 앞 판과 비교해 바뀐 요소 키(`change.keys`)를 싣는다.
 - [ ] `POST …/page/revert { revision, expectedRevision, force? }`가 판 `revision`의 변경만 무른 새 판을 쌓는다. 그 뒤에 같은 칸이 또 바뀌었으면 `force` 없이는 409(`details.reason = "revert_conflict"`)를 내고, `force`면 덮는다. 최신 판 번호가 다르면 지금처럼 409. 무를 것이 없으면 409, 결과가 지면 검증에 걸리면 422다. 되돌리기는 지면 스냅샷만 바꾼 판(`element` · `edited` · `record` · `reverted`)에만 있다 — 생성 · 다듬기 · 복원 판은 스타일 · 스크립트까지 바꾸므로 「복원」만 쓴다.
 - [ ] 이력 탭(구조화 지면)은 오늘 · 어제 · 날짜 묶음, 주체 표시, 요약, 「N분 전」, 「지금 보는 상태」, 줄마다 「되돌리기」, 「전체 · AI 편집 · 직접 편집」 거르기, 되돌릴 수 있는 지점 세 종류와 「복원」을 보인다. 지점은 판 번호로 겹침을 없애고 지금 판과 같은 지점은 숨긴다.
@@ -25,8 +25,8 @@ date: 2026-11-24
 
 **판 비교** — 새 순수 모듈 `services/backend/src/modules/page/structured-history.ts`.
 - 병합은 잎 칸까지 내려간다. 객체는 키별로, id가 있는 배열(`sections` · `career` · `evidence`)은 id별로 내려간다. 순번 배열(`metrics` · `details` · `steps` · `points`)은 세 판의 길이가 같을 때만 자리별로, 아니면 배열 통째로 본다. Spec 노드의 `children`은 판 N이 더한 키를 빼고 뺀 키를 다시 넣는다(순서만 바꾼 경우는 통째). 수치 띠처럼 여러 섹션의 글을 보이는 요소의 편집과 사례 본문 편집이 같은 섹션 안 다른 칸이면 서로 겹치지 않는다.
-- `changedElementKeys(before, after)`: 노드가 다르거나 `elementTextPaths`(portfolio-renderer `editing`)의 글이 달라진 요소 키. 루트는 자식 순서가 바뀐 경우만 넣는다.
-- `describeChange(before, after)`: 바뀐 요소를 `elementTitle`로 불러 "수치 띠 · 글 2곳, 글자 모양 고침", "목차 순서 바꿈" 같은 요약을 만든다.
+- `changedElementKeys(before, after)`: 노드가 다르거나 `elementTextPaths`(portfolio-renderer `editing`)의 글이 달라진 요소 키. 지면 순서대로 두되 여러 섹션의 글을 보이는 요소(작업 목차 · 수치 띠)는 뒤로 보내, 줄을 누르면 사례가 먼저 골라진다. 루트는 자식 순서가 바뀐 경우만 맨 뒤에 넣는다.
+- `describeChange(before, after)`: 글은 바뀐 칸으로 한 번만 부른다(`textPathLabel` — 「경로 재설계 · 요약 고침」, 한 섹션 여러 칸은 「경로 재설계 · 글 3곳 고침」, 여러 섹션은 「… 외 N곳 고침」). 모양은 요소로 부른다(「수치 띠 · 글자 모양 고침」). 순서만 바뀌면 「목차 순서 바꿈」. 같은 글을 작업 목차와 사례가 함께 보여도 두 번 세지 않는다. 되돌린 것을 다시 무르면 「다시 적용: …」으로 부른다.
 - `revertChange(before, changed, current, force)`: 판 N에서 바뀐 잎 칸마다 current가 changed와 같으면 before로 바꾸고, before와 같으면 둔다. 둘 다 아니면 충돌로 모은다. 결과를 `validateStructuredPortfolio`로 검사한다.
 
 **서비스** — `nextRevision`과 `#commitStructured`의 note는 `change`를 필수 인자로 받는다(바탕 판의 `change`가 새 판에 따라오지 않게). `PageService`의 각 쓰기 지점(`generate` · `refine` · `editComposition` · `editElementByAgent` · `addRecordSection` · `restoreRevision`)이 `change`를 넣는다. `#commitStructured`의 note에 `change`를 받는다. `editComposition`은 `describeChange`로 요약을 만든다. 새 `revertRevision`은 `#structured`로 최신 판을 확인하고 `revertChange` 결과를 `#commitStructured`로 쌓는다. `history`는 판마다 앞 판과 `changedElementKeys`를 계산해 `change.keys`를 채운다. 옛 판 추정(`legacyChange`)도 `history`가 판 목록 전체를 보고 한다. `PageServiceError`에 선택 `details`를 더하고 `lift`가 `publicDetails`로 넘긴다(오류 `code`는 계약의 정해진 목록이라 새 값을 만들지 않는다).

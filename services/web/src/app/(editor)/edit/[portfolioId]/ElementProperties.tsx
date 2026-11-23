@@ -16,7 +16,7 @@ import {
   editableFields,
   elementStyleCss,
   elementTextPaths,
-  textPathLabel,
+  textPathParts,
 } from "@expresso/portfolio-renderer/editing";
 import { useActionState, useEffect, useState, useTransition } from "react";
 
@@ -71,6 +71,8 @@ export function ElementProperties({
   const [style, setStyle] = useState<StructuredElementStyle>(savedStyle);
   const [texts, setTexts] = useState<Record<string, string>>({});
   const [state, save, saving] = useActionState(structuredPageAction, {});
+  /** 사용자가 펼치거나 접은 글자 부분. 미리보기에서 누른 부분(`part`)이 바뀌면 이 선택은 잊는다. */
+  const [toggle, setToggle] = useState<{ forPart: string | null; open: string | null } | null>(null);
   const [, startTransition] = useTransition();
 
   const fields = node ? editableFields(node.type) : [];
@@ -130,29 +132,78 @@ export function ElementProperties({
 
   const steps = design?.steps ?? [];
   const title = paths.length ? readStructuredText(snapshot.content, paths[0]!) : null;
+  // 글 칸을 묶음(「수치 1」 · 섹션 제목)으로 모은다. 묶음 없는 칸이 먼저 온다.
+  const textGroups: { key: string; section: string | null; item: string | null; fields: { path: string; field: string }[] }[] = [];
+  for (const path of paths) {
+    const { section, item, field } = textPathParts(snapshot, path, { section: spansSections });
+    const key = `${section ?? ""}|${item ?? ""}`;
+    const found = textGroups.find((one) => one.key === key);
+    if (found) found.fields.push({ path, field });
+    else textGroups.push({ key, section, item, fields: [{ path, field }] });
+  }
+  const changedParts = parts.filter(([name]) => JSON.stringify(style[name] ?? {}) !== JSON.stringify(savedStyle[name] ?? {})).length;
+  const changedProps = Object.entries(props).filter(([name, value]) => value !== savedProps[name]).length;
+  const changes = patches.length + changedParts + changedProps;
+  // 펼친 글자 부분. 미리보기에서 다른 부분을 누르면 그 부분이 펼쳐진다.
+  const openPart = toggle && toggle.forPart === part ? toggle.open : (part ?? parts[0]?.[0] ?? null);
+  const sizeOf = (name: string) => {
+    const value = style[name] ?? {};
+    const at = value.size ? steps.findIndex((step) => step.name === value.size) : -1;
+    const natural = naturalSizes[name];
+    return { at, natural, label: at >= 0 ? steps[at]!.size : natural !== undefined ? `${Math.round(natural)}px` : null };
+  };
 
   return (
-    <div className={styles.properties}>
-      <div className={styles.targetCard}>
-        <Icon name="crosshair-simple" size={15} color="var(--ex-fg-muted)" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className={styles.targetName}>{STRUCTURED_TYPE_LABELS[node.type] ?? node.type}</div>
-          {title ? <div className={styles.targetPath}>{title}</div> : null}
-        </div>
-      </div>
-
-      {fields.length ? (
-        <div className={styles.propGroup}>
-          <div className={styles.propGroupHead}>
-            <span className={styles.propGroupLabel}>모양</span>
-            <span className={styles.propGroupRule} />
+    <div className={styles.elementPanel}>
+      <div className={styles.elementScroll}>
+        <div className={styles.targetCard}>
+          <Icon name="crosshair-simple" size={15} color="var(--ex-fg-muted)" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className={styles.targetName}>{STRUCTURED_TYPE_LABELS[node.type] ?? node.type}</div>
+            {title ? <div className={styles.targetPath}>{title}</div> : null}
           </div>
-          <div className={styles.propRows}>
+        </div>
+
+        {textGroups.length ? (
+          <section className={styles.elementSection} aria-label="글">
+            <h3 className={styles.elementHeading}>글</h3>
+            {textGroups.map(({ key, section, item, fields: groupFields }) => (
+              <div key={key} className={styles.textGroup}>
+                {section || item ? (
+                  <div className={styles.textGroupName}>
+                    {section ? <span className={styles.textGroupSection}>{section}</span> : null}
+                    {item ? <span className={styles.textGroupItem}>{item}</span> : null}
+                  </div>
+                ) : null}
+                {groupFields.map(({ path, field }) => {
+                  const value = texts[path] ?? readStructuredText(snapshot.content, path) ?? "";
+                  const edited = value !== (readStructuredText(snapshot.content, path) ?? "");
+                  const change = (next: string) => setTexts((previous) => ({ ...previous, [path]: next }));
+                  const id = `text-${elementKey}-${path}`;
+                  return (
+                    <div key={path} className={styles.elementRow}>
+                      <label htmlFor={id} className={`${styles.elementLabel} ${edited ? styles.elementLabelEdited : ""}`}>{field}</label>
+                      {MULTILINE.test(path) ? (
+                        <textarea id={id} className={styles.textArea} rows={3} value={value} onChange={(event) => change(event.target.value)} />
+                      ) : (
+                        <input id={id} className={styles.textInput} value={value} onChange={(event) => change(event.target.value)} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </section>
+        ) : null}
+
+        {fields.length ? (
+          <section className={styles.elementSection} aria-label="모양">
+            <h3 className={styles.elementHeading}>모양</h3>
             {fields.map((field) => {
               const value = field.name in props ? props[field.name] : (savedProps[field.name] as string | undefined);
               return (
-                <div key={field.name} className={styles.propRow}>
-                  <span className={styles.propLabel}>{field.label}</span>
+                <div key={field.name} className={styles.elementRow}>
+                  <span className={styles.elementLabel}>{field.label}</span>
                   <span className={styles.weightSegment} role="group" aria-label={field.label}>
                     {field.options.map((option) => (
                       <button
@@ -169,135 +220,139 @@ export function ElementProperties({
                 </div>
               );
             })}
-          </div>
-        </div>
-      ) : null}
+          </section>
+        ) : null}
 
-      {parts.map(([name, partInfo]) => {
-        const value = style[name] ?? {};
-        const at = value.size ? steps.findIndex((step) => step.name === value.size) : -1;
-        // 기본 크기에서 한 단계 움직이면 지금 크기보다 바로 크거나 작은 단계로 간다.
-        const natural = naturalSizes[name];
-        const larger = at >= 0 ? at + 1 : natural === undefined ? 0 : steps.findIndex((step) => (pixels(step.size) ?? Infinity) > natural + 0.5);
-        const smaller = at >= 0 ? at - 1 : natural === undefined ? -1 : steps.findLastIndex((step) => (pixels(step.size) ?? Infinity) < natural - 0.5);
-        return (
-          <div key={name} className={`${styles.propGroup} ${name === part ? styles.propGroupPicked : ""}`}>
-            <div className={styles.propGroupHead}>
-              <span className={styles.propGroupLabel}>{partInfo.label}</span>
-              <span className={styles.propGroupRule} />
-            </div>
-            <div className={styles.propRows}>
-              <div className={styles.propRow}>
-                <span className={styles.propLabel}>색</span>
-                <span className={styles.swatchRow} role="group" aria-label={`${partInfo.label} 색`}>
-                  {STRUCTURED_STYLE_COLORS.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      aria-label={STYLE_COLOR_LABELS[color]}
-                      title={STYLE_COLOR_LABELS[color]}
-                      aria-pressed={value.color === color}
-                      className={`${styles.colorSwatch} ${value.color === color ? styles.colorSwatchOn : ""}`}
-                      style={{ background: design?.colors[color] }}
-                      onClick={() => setPart(name, { color })}
-                    />
-                  ))}
-                  <button
-                    type="button"
-                    aria-pressed={!value.color}
-                    className={`${styles.inherit} ${!value.color ? styles.inheritOn : ""}`}
-                    onClick={() => setPart(name, { color: undefined })}
-                  >
-                    기본
-                  </button>
-                </span>
-              </div>
-              <div className={styles.propRow}>
-                <span className={styles.propLabel}>서체</span>
-                <span className={styles.weightSegment} role="group" aria-label={`${partInfo.label} 서체`}>
-                  {[undefined, ...STRUCTURED_STYLE_FONTS].map((font) => (
-                    <button
-                      key={font ?? "default"}
-                      type="button"
-                      aria-pressed={value.font === font}
-                      title={font ? design?.fonts[font] : undefined}
-                      className={`${styles.weightOption} ${value.font === font ? styles.weightOptionActive : ""}`}
-                      onClick={() => setPart(name, { font })}
-                    >
-                      {font ? FONT_LABELS[font] : "기본"}
-                    </button>
-                  ))}
-                </span>
-              </div>
-              <div className={styles.propRow}>
-                <span className={styles.propLabel}>크기</span>
-                <span className={styles.stepper} role="group" aria-label={`${partInfo.label} 크기`}>
-                  <button
-                    type="button"
-                    className={styles.stepperButton}
-                    aria-label="한 단계 작게"
-                    disabled={smaller < 0 && at < 0}
-                    onClick={() => setPart(name, { size: smaller >= 0 ? steps[smaller]!.name : undefined })}
-                  >
-                    −
-                  </button>
-                  <span className={styles.stepperValue}>{at < 0 ? "기본" : steps[at]!.name}</span>
-                  <button
-                    type="button"
-                    className={`${styles.stepperButton} ${styles.stepperRight}`}
-                    aria-label="한 단계 크게"
-                    disabled={larger < 0 || larger >= steps.length}
-                    onClick={() => setPart(name, { size: steps[larger]!.name })}
-                  >
-                    ＋
-                  </button>
-                </span>
-                <span className={styles.propNote}>{at >= 0 ? steps[at]!.size : natural !== undefined ? `${Math.round(natural)}px` : null}</span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      {paths.length ? (
-        <div className={styles.propGroup}>
-          <div className={styles.propGroupHead}>
-            <span className={styles.propGroupLabel}>글</span>
-            <span className={styles.propGroupRule} />
-          </div>
-          <div className={styles.propRows}>
-            {paths.map((path) => {
-              const label = textPathLabel(snapshot, path, { section: spansSections });
-              const value = texts[path] ?? readStructuredText(snapshot.content, path) ?? "";
-              const change = (next: string) => setTexts((previous) => ({ ...previous, [path]: next }));
+        {parts.length ? (
+          <section className={styles.elementSection} aria-label="글자">
+            <h3 className={styles.elementHeading}>글자</h3>
+            {parts.map(([name, partInfo]) => {
+              const value = style[name] ?? {};
+              const { at, natural, label: sizeLabel } = sizeOf(name);
+              // 기본 크기에서 한 단계 움직이면 지금 크기보다 바로 크거나 작은 단계로 간다.
+              const larger = at >= 0 ? at + 1 : natural === undefined ? 0 : steps.findIndex((step) => (pixels(step.size) ?? Infinity) > natural + 0.5);
+              const smaller = at >= 0 ? at - 1 : natural === undefined ? -1 : steps.findLastIndex((step) => (pixels(step.size) ?? Infinity) < natural - 0.5);
+              const open = openPart === name;
+              const summary = [
+                value.color ? STYLE_COLOR_LABELS[value.color] : null,
+                value.font ? FONT_LABELS[value.font] : null,
+                sizeLabel,
+              ].filter(Boolean).join(" · ") || "기본";
+              const panelId = `part-${elementKey}-${name}`;
               return (
-                <label key={path} className={styles.propField}>
-                  <span className={styles.propLabel}>{label}</span>
-                  {MULTILINE.test(path) ? (
-                    <textarea className={styles.textArea} rows={3} value={value} onChange={(event) => change(event.target.value)} />
-                  ) : (
-                    <input className={styles.textInput} value={value} onChange={(event) => change(event.target.value)} />
-                  )}
-                </label>
+                <div key={name} className={`${styles.partBlock} ${open ? styles.partBlockOpen : ""}`}>
+                  <button
+                    type="button"
+                    className={styles.partHead}
+                    aria-expanded={open}
+                    aria-controls={panelId}
+                    onClick={() => setToggle({ forPart: part, open: open ? null : name })}
+                  >
+                    <span className={styles.partName}>{partInfo.label}</span>
+                    {open ? null : (
+                      <span className={styles.partSummary}>
+                        {value.color ? <span className={styles.partDot} style={{ background: design?.colors[value.color] }} aria-hidden="true" /> : null}
+                        {summary}
+                      </span>
+                    )}
+                    <Icon name="caret-down" size={12} color="var(--ex-fg-subtle)" className={styles.partCaret} />
+                  </button>
+                  {open ? (
+                    <div id={panelId} className={styles.partBody}>
+                      <div className={styles.elementRow}>
+                        <span className={styles.elementLabel}>색</span>
+                        <span className={styles.swatchRow} role="group" aria-label={`${partInfo.label} 색`}>
+                          <button
+                            type="button"
+                            aria-pressed={!value.color}
+                            className={`${styles.swatchDefault} ${!value.color ? styles.colorSwatchOn : ""}`}
+                            onClick={() => setPart(name, { color: undefined })}
+                          >
+                            기본
+                          </button>
+                          {STRUCTURED_STYLE_COLORS.map((color) => (
+                            <button
+                              key={color}
+                              type="button"
+                              aria-label={STYLE_COLOR_LABELS[color]}
+                              title={STYLE_COLOR_LABELS[color]}
+                              aria-pressed={value.color === color}
+                              className={`${styles.colorSwatch} ${value.color === color ? styles.colorSwatchOn : ""}`}
+                              style={{ background: design?.colors[color] }}
+                              onClick={() => setPart(name, { color })}
+                            />
+                          ))}
+                        </span>
+                      </div>
+                      <div className={styles.elementRow}>
+                        <span className={styles.elementLabel}>서체</span>
+                        <span className={styles.weightSegment} role="group" aria-label={`${partInfo.label} 서체`}>
+                          {[undefined, ...STRUCTURED_STYLE_FONTS].map((font) => (
+                            <button
+                              key={font ?? "default"}
+                              type="button"
+                              aria-pressed={value.font === font}
+                              title={font ? design?.fonts[font] : undefined}
+                              className={`${styles.weightOption} ${value.font === font ? styles.weightOptionActive : ""}`}
+                              onClick={() => setPart(name, { font })}
+                            >
+                              {font ? FONT_LABELS[font] : "기본"}
+                            </button>
+                          ))}
+                        </span>
+                      </div>
+                      <div className={styles.elementRow}>
+                        <span className={styles.elementLabel}>크기</span>
+                        <span className={styles.sizeControl}>
+                          <span className={styles.stepper} role="group" aria-label={`${partInfo.label} 크기`}>
+                            <button
+                              type="button"
+                              className={styles.stepperButton}
+                              aria-label="한 단계 작게"
+                              disabled={smaller < 0 && at < 0}
+                              onClick={() => setPart(name, { size: smaller >= 0 ? steps[smaller]!.name : undefined })}
+                            >
+                              −
+                            </button>
+                            <span className={styles.stepperValue}>{at < 0 ? "기본" : steps[at]!.name}</span>
+                            <button
+                              type="button"
+                              className={`${styles.stepperButton} ${styles.stepperRight}`}
+                              aria-label="한 단계 크게"
+                              disabled={larger < 0 || larger >= steps.length}
+                              onClick={() => setPart(name, { size: steps[larger]!.name })}
+                            >
+                              ＋
+                            </button>
+                          </span>
+                          {sizeLabel ? <span className={styles.propNote}>{sizeLabel}</span> : null}
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
               );
             })}
-          </div>
-        </div>
-      ) : null}
+          </section>
+        ) : null}
+      </div>
 
-      {state.error ? <p className={styles.panelError}>{state.error}</p> : null}
-      <div className={styles.propActions}>
-        <button
-          type="button"
-          className={styles.revertButton}
-          disabled={!dirty || saving}
-          onClick={() => { setProps({}); setStyle(savedStyle); setTexts({}); }}
-        >
-          되돌리기
-        </button>
-        <button type="button" className={styles.propSave} disabled={!dirty || saving} onClick={submit}>
-          {saving ? "저장 중…" : "저장"}
-        </button>
+      <div className={`${styles.elementDock} ${dirty ? styles.elementDockDirty : ""}`}>
+        {state.error ? <p className={styles.dockError}>{state.error}</p> : null}
+        <div className={styles.dockRow}>
+          <span className={styles.dockCount} aria-live="polite">{dirty ? `바뀐 곳 ${changes}` : "바뀐 곳 없음"}</span>
+          <button
+            type="button"
+            className={styles.dockCancel}
+            disabled={!dirty || saving}
+            onClick={() => { setProps({}); setStyle(savedStyle); setTexts({}); }}
+          >
+            변경 취소
+          </button>
+          <button type="button" className={styles.dockSave} disabled={!dirty || saving} onClick={submit}>
+            {saving ? "저장 중…" : "저장"}
+          </button>
+        </div>
       </div>
     </div>
   );

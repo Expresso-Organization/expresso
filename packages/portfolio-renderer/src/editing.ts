@@ -260,6 +260,24 @@ export function textPathLabel(snapshot: Snapshot, path: string, options: { secti
   return `${prefix}${LIST_LABELS[parts[2]!] ?? parts[2]} ${Number(parts[3]) + 1} ${TEXT_LABELS[parts[4]!] ?? parts[4]}`;
 }
 
+/**
+ * 경로를 묶음과 칸으로 나눠 부릅니다. 속성 탭이 「수치 1」 묶음 아래 「이름표 · 값」 칸을 놓을 때 씁니다.
+ * `section`이 참이면 섹션 제목도 냅니다(여러 섹션의 글을 보이는 요소). `item`은 목록 항목(「수치 1」 · 「추이 점 2」)이고 없으면 null입니다.
+ * `textPathLabel`과 같은 이름표를 씁니다.
+ */
+export function textPathParts(snapshot: Snapshot, path: string, options: { section?: boolean } = {}): { section: string | null; item: string | null; field: string } {
+  const parts = path.split("/").slice(1);
+  if (parts[0] === "profile") return { section: null, item: null, field: TEXT_LABELS[parts[1]!] ?? parts[1]! };
+  const found = snapshot.content.sections.find((one) => one.id === parts[1]);
+  const section = found && options.section ? found.title : null;
+  if (parts[2] === "series") {
+    if (parts[3] === "label") return { section, item: "추이", field: "추이 이름" };
+    return { section, item: `추이 점 ${Number(parts[4]) + 1}`, field: parts[5] === "label" ? "시점 · 단계" : "값" };
+  }
+  if (parts.length === 3) return { section, item: null, field: TEXT_LABELS[parts[2]!] ?? parts[2]! };
+  return { section, item: `${LIST_LABELS[parts[2]!] ?? parts[2]} ${Number(parts[3]) + 1}`, field: TEXT_LABELS[parts[4]!] ?? parts[4]! };
+}
+
 function sectionTextPaths(section: StructuredSection, withQuote: boolean): string[] {
   const base = `/sections/${section.id}`;
   return [

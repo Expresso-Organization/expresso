@@ -475,6 +475,25 @@ export const PageGenerationManifestSchema = z.strictObject({
 });
 export type PageGenerationManifest = z.infer<typeof PageGenerationManifestSchema>;
 
+/**
+ * 판 하나가 무엇을 바꿨는가. 다듬기의 이력 탭(04c)이 이 칸으로 누가 무엇을 고쳤는지 보이고 거른다.
+ * `actor`는 고친 주체다 — 생성 · 다듬기 · 에이전트 고침은 AI, 직접 편집 · 기록 추가 · 복원 · 되돌리기는 사용자다.
+ * `keys`는 앞 판과 비교해 바뀐 지면 요소 키다. 이력을 읽을 때 계산해 싣고, 저장하지 않는다.
+ */
+export const PAGE_CHANGE_KINDS = ["generated", "refined", "element", "edited", "record", "restored", "reverted"] as const;
+export const PageChangeSchema = z.strictObject({
+  actor: z.enum(["ai", "user"]),
+  kind: z.enum(PAGE_CHANGE_KINDS),
+  summary: z.string().min(1).max(200),
+  keys: z.array(z.string().min(1).max(200)).max(40).default([]),
+});
+export type PageChange = z.infer<typeof PageChangeSchema>;
+/**
+ * 지면 스냅샷만 바꾼 판의 종류. 이 판만 「이 변경만 되돌리기」가 된다 — 생성 · 다듬기 · 복원 판은 스타일과 스크립트까지 바꾸므로
+ * 판 전체 복원으로만 무른다. 서버의 되돌리기와 이력 화면이 같은 표를 본다.
+ */
+export const PAGE_REVERTIBLE_CHANGE_KINDS: ReadonlySet<PageChange["kind"]> = new Set(["element", "edited", "record", "reverted"]);
+
 export const GeneratedPageSchema = z.strictObject({
   id: UuidSchema,
   portfolioId: UuidSchema,
@@ -497,6 +516,8 @@ export const GeneratedPageSchema = z.strictObject({
   styleSpec: PageStyleGrammarSchema.nullable().default(null),
   /** 구조화 초안이면 워커가 이어서 다듬습니다. 다듬기 전에 만든 판에는 없습니다. */
   refinement: PageRefinementSchema.optional(),
+  /** 이 판이 바꾼 것. 구조화 지면 이력이 쓴다. 자유 HTML 지면의 판에는 없을 수 있다. */
+  change: PageChangeSchema.optional(),
   createdAt: TimestampSchema,
 });
 export type GeneratedPage = z.infer<typeof GeneratedPageSchema>;
@@ -560,6 +581,17 @@ export const RestorePageRevisionSchema = z.strictObject({
   expectedRevision: z.number().int().nonnegative(),
 });
 export type RestorePageRevision = z.infer<typeof RestorePageRevisionSchema>;
+
+/**
+ * 판 하나의 변경만 무른다. 그 판이 바꾼 칸을 그 앞 판의 값으로 돌리고, 그 뒤에 같은 칸을 또 고쳤으면 `force` 없이는 거절한다.
+ * 결과는 새 판으로 쌓인다.
+ */
+export const RevertPageRevisionSchema = z.strictObject({
+  revision: z.number().int().positive(),
+  expectedRevision: z.number().int().nonnegative(),
+  force: z.boolean().optional(),
+});
+export type RevertPageRevision = z.infer<typeof RevertPageRevisionSchema>;
 
 /**
  * 지면을 감싸는 껍데기.
