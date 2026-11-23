@@ -1592,24 +1592,33 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-goal .way.off { stroke: #8596AF; stroke-dasharray: 8 7; }
 .fd-goal .way.on { stroke: #9A4030; }
 
-/* Lessons & Learned · 분담 대비 · 개발 순환 · 배운 점 */
-.fd-lesson .t { font-family: var(--ex-font-ui); font-size: 30px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
-.fd-lesson .lb { font-family: var(--ex-font-ui); font-size: 21px; letter-spacing: -.02em; fill: var(--ex-slate-700); }
-.fd-lesson .hx { font-family: var(--ex-font-ui); font-size: 19px; font-weight: 500; fill: var(--ex-slate-500); }
-.fd-lesson .ra1 { fill: #E4E9F2; } .fd-lesson .ra2 { fill: #D3DBE7; } .fd-lesson .ra3 { fill: #C1CBDA; }
-.fd-lesson .rb { fill: #FBEEE4; stroke: #C48A7D; stroke-width: 1.6; }
-.fd-lesson .cap { font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.02em; fill: var(--ex-slate-500); }
-.fd-lesson .cap.on { fill: #9A4030; }
-.fd-lesson .e { font-family: var(--ex-font-ui); font-size: 21px; letter-spacing: -.02em; fill: #53657D; }
-.fd-lesson .nd { fill: var(--ex-white); stroke: #D9E3EF; stroke-width: 1.6; }
-.fd-lesson .nd.on { stroke: #9A4030; stroke-width: 2; }
-.fd-lesson .g { font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
-.fd-lesson .ex { font-family: var(--ex-font-ui); font-size: 21px; letter-spacing: -.02em; fill: var(--ex-ink-900); }
-.fd-lesson .dot { fill: #C48A7D; }
-.fd-lesson .div { stroke: var(--ex-line-200); stroke-width: 1.6; }
-.fd-lesson .way { fill: none; stroke: #9A4030; stroke-width: 2; }
-.fd-lesson .k { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; fill: var(--ex-espresso); }
-.fd-lesson .v { font-family: var(--ex-font-ui); font-size: 32px; font-weight: 600; letter-spacing: -.03em; fill: var(--ex-ink-900); }
+/* Lessons & Learned · 도메인 개발 · 교차 사용 QA · 폴리싱 관계도 */
+.fl-flow { display: grid; grid-template-columns: 190px 1fr; column-gap: 24px; row-gap: 0; width: 1712px; flex: none; align-items: center; }
+.fl-lab { font-family: var(--ex-font-ui); font-size: 25px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-slate-500); }
+.fl-lab.on { color: #9A4030; }
+.fl-cols { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 16px; }
+.fl-col { display: flex; flex-direction: column; align-items: stretch; }
+.fl-who { display: flex; gap: 8px; }
+.fl-who > span { flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 6px; height: 58px; border-radius: 29px; font-family: var(--ex-font-ui); font-size: 24px; font-weight: 600; letter-spacing: -.02em; white-space: nowrap; }
+.fl-who .p { background: var(--ex-white); border: 1.5px solid var(--ex-line-200); color: var(--ex-ink-900); }
+.fl-who .a { background: var(--ex-tint-50); color: var(--ex-slate-700); font-weight: 500; }
+.fl-who i { font-size: 24px; }
+.fl-who .a i { color: var(--ex-slate-500); }
+.fl-dn { display: block; text-align: center; font-size: 30px; line-height: 1; color: #C48A7D; margin: 8px 0; }
+.fl-dom { height: 124px; display: grid; place-items: center; text-align: center; padding: 0 18px; border-radius: 18px; background: #FBEEE4; border: 1.6px solid #C48A7D; font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; letter-spacing: -.03em; line-height: 1.25; color: var(--ex-ink-900); word-break: keep-all; }
+.fl-x { grid-column: 2; display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 16px; height: 84px; }
+.fl-x i { justify-self: center; align-self: center; font-size: 32px; color: #9A4030; }
+.fl-qa { border-radius: 20px; background: var(--ex-white); border: 2px solid #9A4030; padding: 34px 38px; display: grid; grid-template-columns: auto 1fr; column-gap: 48px; align-items: center; }
+.fl-qa .h { font-family: var(--ex-font-ui); font-size: 30px; font-weight: 600; letter-spacing: -.03em; color: var(--ex-ink-900); line-height: 1.35; }
+.fl-qa .h small { display: block; font-size: 22px; font-weight: 400; color: #53657D; }
+.fl-qa ul { list-style: none; margin: 0; padding: 0 0 0 40px; border-left: 1.6px solid var(--ex-line-200); display: grid; row-gap: 14px; }
+.fl-qa li { font-family: var(--ex-font-ui); font-size: 25px; letter-spacing: -.02em; color: var(--ex-ink-900); display: flex; align-items: center; gap: 14px; }
+.fl-qa li::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: #C48A7D; flex: none; }
+.fl-gap { grid-column: 2; height: 68px; display: grid; place-items: center; }
+.fl-gap i { font-size: 30px; color: #9A4030; }
+.fl-pol { border-radius: 20px; background: var(--ex-tint-50); padding: 30px 38px; display: flex; align-items: center; justify-content: space-between; font-family: var(--ex-font-ui); font-size: 28px; font-weight: 600; letter-spacing: -.03em; color: var(--ex-ink-900); }
+.fl-pol span { display: flex; align-items: center; gap: 12px; font-size: 22px; font-weight: 500; color: #9A4030; }
+.fl-pol span i { font-size: 28px; }
 
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
@@ -2606,7 +2615,7 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp" data-title="Lessons &amp; Learned" data-kind="분담 대비 · 개발 순환 · 배운 점">
+<section class="slide fp" data-title="Lessons &amp; Learned" data-kind="관계도 · 도메인 개발과 교차 사용 QA">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M7.93 26.28 A14.25 14.25 0 0 0 36.07 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="no">5</span><span class="sec">Lessons &amp; Learned</span><span class="pg"></span></div>
     <div class="head in dl-2">
@@ -2614,74 +2623,16 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">에이전트 기반 개발(Agentic-Driven Development)에 맞는 협업 방법 탐색</p>
     </div>
     <div class="body">
-      <svg class="fd-lesson" viewBox="0 0 1712 650" style="width: 1712px; height: 650px; flex: none; max-width: none; max-height: none" role="img" aria-label="분담 방식 비교: 일반적 방식은 화면 · 서버 · AI 직군별로 나누고, Expresso는 커리어 기록 · 채용 공고 · 채용 공고 분석 · 포트폴리오 생성 · AI 대화 도메인별로 나눠 도메인마다 한 사람과 에이전트가 전 구간을 개발. 개발 순환: 에이전트 기반 개발(의도 · 명세 · 계획 작성 후 구현) → 교차 사용 QA(서로의 도메인을 사용자로 사용, 예: 비슷한 검색에 입력하다 만 검색어, 답변 속 내부 필드 이름) → 폴리싱 → 다시 개발. 배운 점: 분담 단위는 직군에서 도메인으로, 사람의 역할은 코드 작성에서 명세와 검증으로, 교차 사용 QA는 테스트 미검출 문제 발견">
-<defs><marker id="fdl-tip" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#9A4030"></path></marker></defs>
-<g class="in dl-3">
-<text class="t" x="0" y="30">분담 방식</text>
-<text class="hx" x="195" y="90" text-anchor="middle">화면</text>
-<text class="hx" x="419" y="90" text-anchor="middle">화면</text>
-<text class="hx" x="255" y="90" text-anchor="middle">서버</text>
-<text class="hx" x="479" y="90" text-anchor="middle">서버</text>
-<text class="hx" x="315" y="90" text-anchor="middle">AI</text>
-<text class="hx" x="539" y="90" text-anchor="middle">AI</text>
-<text class="lb" x="0" y="134">커리어 기록</text>
-<text class="lb" x="0" y="188">채용 공고</text>
-<text class="lb" x="0" y="242">채용 공고 분석</text>
-<text class="lb" x="0" y="296">포트폴리오 생성</text>
-<text class="lb" x="0" y="350">AI 대화</text>
-<rect class="ra1" x="168" y="104" width="54" height="262" rx="8"></rect>
-<rect class="ra2" x="228" y="104" width="54" height="262" rx="8"></rect>
-<rect class="ra3" x="288" y="104" width="54" height="262" rx="8"></rect>
-<rect class="rb" x="392" y="104" width="174" height="46" rx="8"></rect>
-<rect class="rb" x="392" y="158" width="174" height="46" rx="8"></rect>
-<rect class="rb" x="392" y="212" width="174" height="46" rx="8"></rect>
-<rect class="rb" x="392" y="266" width="174" height="46" rx="8"></rect>
-<rect class="rb" x="392" y="320" width="174" height="46" rx="8"></rect>
-<text class="cap" x="255" y="406" text-anchor="middle">직군 분담</text>
-<text class="e" x="255" y="436" text-anchor="middle">일반적 방식</text>
-<text class="cap on" x="479" y="406" text-anchor="middle">도메인 분담</text>
-<text class="e" x="479" y="436" text-anchor="middle">Expresso</text>
-<line class="div" x1="0" y1="476" x2="566" y2="476"></line>
-<text class="e" x="0" y="516">도메인마다 한 사람과 에이전트</text>
-<text class="e" x="0" y="548">화면 · 서버 · AI 전 구간 개발</text>
-</g>
-<g class="in in-fade dl-4"><line class="way" x1="580" y1="110" x2="652" y2="110" marker-end="url(#fdl-tip)"></line></g>
-<g class="in dl-4">
-<text class="t" x="660" y="30">개발 순환</text>
-<rect class="nd" x="660" y="62" width="500" height="96" rx="14"></rect>
-<text class="g" x="688" y="104">에이전트 기반 개발</text>
-<text class="e" x="688" y="140">의도 · 명세 · 계획 작성 후 구현</text>
-</g>
-<g class="in dl-5">
-<line class="way" x1="910" y1="160" x2="910" y2="194" marker-end="url(#fdl-tip)"></line>
-<rect class="nd on" x="660" y="200" width="500" height="214" rx="14"></rect>
-<text class="g" x="688" y="242">교차 사용 QA</text>
-<text class="e" x="688" y="278">서로의 도메인을 사용자로 사용</text>
-<line class="div" x1="688" y1="302" x2="1132" y2="302"></line>
-<circle class="dot" cx="694" cy="333" r="5"></circle><text class="ex" x="710" y="340">「비슷한 검색」에 입력하다 만 「ㄹ옹로」</text>
-<circle class="dot" cx="694" cy="373" r="5"></circle><text class="ex" x="710" y="380">답변 속 내부 필드 이름 「jobGoal」</text>
-</g>
-<g class="in dl-6">
-<line class="way" x1="910" y1="416" x2="910" y2="450" marker-end="url(#fdl-tip)"></line>
-<rect class="nd" x="660" y="456" width="500" height="96" rx="14"></rect>
-<text class="g" x="688" y="498">폴리싱</text>
-<text class="e" x="688" y="534">QA 지적 반영 · 기능성 · 사용성 개선</text>
-<path class="way" d="M1162 504 H1198 V110 H1168" marker-end="url(#fdl-tip)"></path>
-</g>
-<g class="in dl-7"><text class="t" x="1250" y="30">배운 점</text>
-<text class="k" x="1250" y="96">분담 단위</text>
-<text class="v" x="1250" y="144">직군 → 도메인</text>
-<text class="e" x="1250" y="182">한 사람과 에이전트의 도메인 전 구간 개발</text>
-<line class="div" x1="1250" y1="218" x2="1712" y2="218"></line>
-<text class="k" x="1250" y="266">사람의 역할</text>
-<text class="v" x="1250" y="314">코드 작성 → 명세 · 검증</text>
-<text class="e" x="1250" y="352">구현 위임 · 의도 정의와 결과 판정 집중</text>
-<line class="div" x1="1250" y1="388" x2="1712" y2="388"></line>
-<text class="k" x="1250" y="436">교차 사용 QA</text>
-<text class="v" x="1250" y="484">테스트 미검출 문제 발견</text>
-<text class="e" x="1250" y="522">사용자 관점의 기능성 · 사용성 평가</text>
-</g>
-</svg>
+      <div class="fl-flow" role="img" aria-label="팀원 다섯이 각자 에이전트와 함께 자기 도메인을 개발: 오시건 커리어 기록, 심민규 채용 공고, 채서현 채용 공고 분석 · AI 인터뷰, 박민재 생성 · 배포 · 추천 모델, 윤규현 AI 대화 · 방문 분석. 개발이 끝나면 팀원 각자 다른 사람의 도메인을 사용자로 써 보며 QA. 지적 예: 비슷한 검색에 입력하다 만 검색어, 답변 속 내부 필드 이름. 지적은 폴리싱으로 반영되어 다음 개발로 이어짐">
+        <div class="fl-lab in in-fade dl-3">도메인 개발</div>
+        <div class="fl-cols in dl-3"><div class="fl-col"><div class="fl-who"><span class="p"><i class="ph ph-user"></i>오시건</span><span class="a"><i class="ph ph-robot"></i>에이전트</span></div><i class="ph ph-arrow-down fl-dn"></i><div class="fl-dom">커리어 기록</div></div><div class="fl-col"><div class="fl-who"><span class="p"><i class="ph ph-user"></i>심민규</span><span class="a"><i class="ph ph-robot"></i>에이전트</span></div><i class="ph ph-arrow-down fl-dn"></i><div class="fl-dom">채용 공고</div></div><div class="fl-col"><div class="fl-who"><span class="p"><i class="ph ph-user"></i>채서현</span><span class="a"><i class="ph ph-robot"></i>에이전트</span></div><i class="ph ph-arrow-down fl-dn"></i><div class="fl-dom">채용 공고 분석 ·<br>AI&nbsp;인터뷰</div></div><div class="fl-col"><div class="fl-who"><span class="p"><i class="ph ph-user"></i>박민재</span><span class="a"><i class="ph ph-robot"></i>에이전트</span></div><i class="ph ph-arrow-down fl-dn"></i><div class="fl-dom">생성 · 배포 · 추천 모델</div></div><div class="fl-col"><div class="fl-who"><span class="p"><i class="ph ph-user"></i>윤규현</span><span class="a"><i class="ph ph-robot"></i>에이전트</span></div><i class="ph ph-arrow-down fl-dn"></i><div class="fl-dom">AI 대화 · 방문 분석</div></div></div>
+        <div class="fl-x in in-fade dl-4"><i class="ph ph-arrows-down-up"></i><i class="ph ph-arrows-down-up"></i><i class="ph ph-arrows-down-up"></i><i class="ph ph-arrows-down-up"></i><i class="ph ph-arrows-down-up"></i></div>
+        <div class="fl-lab on in in-fade dl-4">교차 사용 QA</div>
+        <div class="fl-qa in dl-4"><div class="h">다른 사람의 도메인을 사용자로 사용<small>팀원 각자 · 기능성과 사용성 평가</small></div><ul><li>「비슷한 검색」에 입력하다 만 「ㄹ옹로」</li><li>컨설턴트 답변 속 내부 필드 이름 「jobGoal」</li></ul></div>
+        <div class="fl-gap in in-fade dl-5"><i class="ph ph-arrow-down"></i></div>
+        <div class="fl-lab in in-fade dl-5">폴리싱</div>
+        <div class="fl-pol in dl-5">지적 반영 · 기능성 · 사용성 개선<span><i class="ph ph-arrow-counter-clockwise"></i>다음 도메인 개발로 반복</span></div>
+      </div>
     </div>
   </div>
 </section>
