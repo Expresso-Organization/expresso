@@ -8,6 +8,6 @@ export type InterviewApi = Pick<LegacyInterviewService, keyof LegacyInterviewSer
   /** 에이전트 대화에서 여는 인터뷰. 질문 0개의 세션으로 시작한다. */
   openConversation(userId: string, brewId: string): Promise<InterviewSession>;
   conversationState(userId: string, brewId: string): Promise<{ bases: InterviewQuestionBase[]; session: InterviewSession | null }>;
-  saveConversationAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string }, idempotencyKey: string): Promise<InterviewAnswerResult>;
+  saveConversationAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string; recordId?: string }, idempotencyKey: string): Promise<InterviewAnswerResult>;
 };
 export { InterviewError } from "./public.js";

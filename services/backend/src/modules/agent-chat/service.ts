@@ -3,7 +3,7 @@ import { PageElementIssues, PageServiceError, type PageApi } from "../page/index
 import { elementTitle } from "@expresso/portfolio-renderer";
 import { AgentCredentials } from "./credentials.js";
 import { createHash, randomUUID } from "node:crypto";
-import { AgentConversationSchema, PAGE_IMAGE_SRC_PREFIX, type AgentWorkAttachInput, type AgentWorkMaterials, type AgentJobSearchInput, type AgentActivitySearchInput, type AgentFindList, type AgentRecordAppendInput, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
+import { AgentConversationSchema, PAGE_IMAGE_SRC_PREFIX, type AgentInterviewSaved, type AgentWorkAttachInput, type AgentWorkMaterials, type AgentJobSearchInput, type AgentActivitySearchInput, type AgentFindList, type AgentRecordAppendInput, type AgentDiagnosisInput, type ConsultantDiagnosis, type ConsultantCommitment, type AgentSavedRecord, isStructuredGroup, type AgentPageElementEditInput, type AgentPageEdit, type StructuredPortfolioSnapshot, type CareerDocumentBootstrap, type AgentConversation, type AgentContext, type AgentMessage, type SendAgentMessage, type AgentApproval, type AgentRecordDraftDecision, type AgentRecordDraftInput, type AgentGoalDraftDecision, type AgentGoalDraftInput, type AgentPlanDecision, type AgentReplanDecision, type ReplanProposalInput, type UpdateTaskProgress, type GapReview, type GapReviewDraft, type PlanProposalInput, type RequirementReview, type RequirementReviewDraft } from "@expresso/contracts";
 import { mongoCollections, type AgentConversationDoc } from "@expresso/database";
 import type { MongoContext } from "../../platform/mongodb.js";
 import { AgentToolRejection, type AgentMemory, type AgentRecordText, type AgentRuntime } from "../../platform/agent/runtime.js";
@@ -26,6 +26,8 @@ import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { GoalDemandApi, JobBoardApi } from "../jobs/index.js";
 import { goalFamily } from "../jobs/demand.js";
 import type { ActivityApi } from "../activities/index.js";
+import { retrySearch } from "./search-retry.js";
+import { mergeSearch, searchConditions, roleTerms } from "./search-state.js";
 import { activityItem, activityMatches, jobItem } from "./finds.js";
 import { ConsentError, type ConsentApi } from "../consent/index.js";
 import { brewStartState, generating, KeyedQueue, type AgentBrewDeps, type LiveBrew } from "./brew-start.js";
@@ -195,20 +197,30 @@ export class AgentChatService {
    * 직군은 사용자가 쓰는 말(「백엔드 개발자」)로 와도 공고에 매긴 직군으로 옮기고, 옮기지 못하면 글 검색에 더한다.
    * 사용자가 「관심 없음」으로 넘긴 공고는 뺀다 — 뺀 만큼 더 읽어 건수를 채운다.
    */
-  private async searchJobs(userId: string, input: AgentJobSearchInput): Promise<AgentFindList> {
-    if (!this.finds) throw new AgentToolRejection(["이 환경에서는 공고를 찾을 수 없습니다. 사용자에게 그렇게 전하십시오."]);
-    const dismissed = await this.finds.dismissed(userId);
-    const family = input.family ? goalFamily(input.family) : null;
-    const q = [input.query, input.family && !family ? input.family : null].filter(Boolean).join(" ").trim();
-    const result = await this.finds.jobs.list(userId, {
-      ...(q ? { q } : {}), ...(input.technology ? { technology: input.technology } : {}), ...(family ? { family } : {}), ...(input.location ? { location: input.location } : {}),
-      ...(input.experience !== undefined ? { experience: input.experience } : {}), ...(input.interested ? { interested: true } : { deadline: "open" as const }),
-      sort: input.interested ? "deadline" : "recent", page: 1, limit: Math.min(50, input.limit + dismissed.size),
-    });
+  private async searchJobs(row: AgentConversationDoc, input: AgentJobSearchInput): Promise<AgentFindList> {
+    if (!this.finds) throw new AgentToolRejection(["이 환경에서는 검색을 실행할 수 없습니다. 공고가 없는 것으로 설명하지 마십시오."]);
+    const previous = (await this.owned(row.userId, row._id)).search;
+    const search = mergeSearch(previous, input);
+    const dismissed = await this.finds.dismissed(row.userId);
+    const families = [...new Set((search.families ?? []).map(value => goalFamily(value)).filter((value): value is NonNullable<typeof value> => !!value))];
+    const q = [search.query, ...(search.families ?? []).filter(value => !goalFamily(value))].filter(Boolean).join(" ");
+    const titleTerms = roleTerms(search.families ?? []);
+    const query = {
+      ...(titleTerms.length ? { titleTerms } : {}),
+      ...(q ? { q } : {}), ...(search.technology ? { technology: search.technology } : {}),
+      ...(families.length ? { families } : {}), ...(search.locations?.length ? { locations: search.locations } : {}),
+      ...(search.locationMode ? { locationMode: search.locationMode } : {}), ...(search.country ? { country: search.country } : {}),
+      ...(search.experience !== undefined ? { experience: search.experience } : {}),
+      ...(search.interested ? { interested: true } : { deadline: "open" as const }),
+      sort: search.interested ? "deadline" as const : "match" as const, page: 1, limit: Math.min(50, search.limit + dismissed.size),
+    };
+    const result = await retrySearch(() => this.finds!.jobs.list(row.userId, query)).catch(() => { throw new AgentToolRejection(["검색 실행에 실패했습니다. 기존 결과를 유지하고 재시도를 안내하십시오. 결과가 없는 것으로 설명하지 마십시오."]); });
     const kept = result.data.filter(job => !dismissed.has(`job:${job.id}`));
-    const title = [family ?? input.family, input.technology, input.location, input.experience !== undefined ? (input.experience === 0 ? "신입" : `경력 ${input.experience}년`) : null, input.query ? `「${input.query}」` : null, input.interested ? "관심 공고" : null].filter(Boolean).join(" · ");
-    return { title: `${title || "열린"} 공고`.slice(0, 120), items: kept.slice(0, input.limit).map(jobItem), total: Math.max(kept.length, result.summary.total - (result.data.length - kept.length)) };
+    await this.rows.updateOne({ _id: row._id, userId: row.userId }, { $set: { search } });
+    const conditions = searchConditions(search);
+    return { title: "조건에 맞는 공고", conditions, items: kept.slice(0, search.limit).map(jobItem), total: Math.max(kept.length, result.summary.total - (result.data.length - kept.length)) };
   }
+
   /** 접수 중인 공모전 · 해커톤을 마감이 이른 순서로 찾는다. 글은 제목 · 주최 · 분야에서 찾는다. */
   private async searchActivities(userId: string, input: AgentActivitySearchInput): Promise<AgentFindList> {
     if (!this.finds) throw new AgentToolRejection(["이 환경에서는 활동을 찾을 수 없습니다. 사용자에게 그렇게 전하십시오."]);
@@ -736,12 +748,20 @@ export class AgentChatService {
       const row = await this.owned(userId, id);
       const start = this.startOfBrew(row, brewId);
       if (row.messages.some(message => message.tools.some(tool => tool.brewDesign?.brewId === brewId && tool.brewDesign.designMessageId === null))) return view(row);
-      const state = await this.brews!.brewState(userId, brewId);
-      if (!state) throw new AgentChatError(404, "이 대화에서 만든 제작을 찾을 수 없습니다.");
-      if (state.status === "draft") throw new AgentChatError(409, "재료를 고른 뒤 디자인을 고를 수 있습니다.", "재료를 고른 뒤 디자인을 고를 수 있습니다.");
-      await this.brews!.startRecipe(userId, brewId);
-      return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "", brewDesign: { brewId, jobPostingId: start.jobPostingId, designMessageId: null } }));
+      if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 눌러 주세요.", "응답이 끝난 뒤 눌러 주세요.");
+      const brewDesign = await this.prepareDesign(row, brewId);
+      return view(await this.appendCard(row, { id: randomUUID(), name: "디자인", status: "complete", summary: "디자인 준비를 시작했습니다.", brewDesign }));
     });
+  }
+  /** 버튼과 자연어 전환이 같은 소유권·단계 검사와 구성 작업을 사용한다. */
+  private async prepareDesign(row: AgentConversationDoc, brewId: string): Promise<AgentBrewDesign> {
+    const start = this.startOfBrew(row, brewId);
+    const state = await this.brews!.brewState(row.userId, brewId);
+    if (!state) throw new AgentChatError(404, "이 대화에서 만든 제작을 찾을 수 없습니다.");
+    if (state.status === "draft") throw new AgentChatError(409, "재료를 고른 뒤 디자인을 고를 수 있습니다.", "재료를 고른 뒤 디자인을 고를 수 있습니다.");
+    if (generating(state.generation)) throw new AgentToolRejection(["이미 포트폴리오를 만드는 중입니다. 현재 생성 카드를 안내하십시오."]);
+    await this.brews!.startRecipe(row.userId, brewId);
+    return { brewId, jobPostingId: start.jobPostingId, designMessageId: null };
   }
   /**
    * 「디자인」 카드의 「첫 화면 보기」. 디자인 대화에 그리기를 보내고, 그 답을 가리키는 카드 답변을 서버가 붙인다. 실행을 시작하지 않는다.
@@ -874,6 +894,8 @@ export class AgentChatService {
     const brew = await this.brewInRow(row, input.brewId);
     if (!brew) throw new AgentToolRejection(["이 대화에서 만든 제작이 아닙니다. brews의 brewId를 쓰십시오."]);
     if (brew.status !== "interviewing") throw new AgentToolRejection([brew.status === "draft" ? "아직 재료를 고르는 단계입니다. 「재료 고르기」 카드의 「AI와 대화 시작」을 안내하십시오." : "디자인 단계로 넘어간 제작입니다. 더 저장하지 않습니다. 「이어서 만들기」를 안내하십시오."]);
+    const selected = await this.brews!.selectedRecords(row.userId, brew.id);
+    if (input.recordId && !selected.some(record => record.id === input.recordId)) throw new AgentToolRejection(["이 제작에서 선택한 기록에만 답을 반영할 수 있습니다. materials의 id를 쓰십시오."]);
     const { bases } = await this.brews!.interview(row.userId, brew.id);
     const base = bases[input.basis];
     if (!base) throw new AgentToolRejection([`basis ${input.basis}는 interview.bases에 없습니다. 0부터 ${bases.length - 1}까지의 index를 쓰십시오.`]);
@@ -886,14 +908,40 @@ export class AgentChatService {
     const messages = row.messages.filter(message => message.role === "user" && chosen.has(message.id));
     const transcript = messages.map(message => message.text.trim()).join("\n\n");
     const key = `agent-interview:${createHash("sha256").update(`${slot}:${messages.map(message => message.id).join(",")}`).digest("hex")}`;
+    const before = input.recordId ? await this.documents.bootstrap(row.userId, input.recordId) : null;
     try {
-      const result = await this.brews!.saveInterviewAnswer(row.userId, brew.id, { basis: base.basis, question: input.question, transcript }, key);
+      const result = await this.brews!.saveInterviewAnswer(row.userId, brew.id, { basis: base.basis, question: input.question, transcript, ...(input.recordId ? { recordId: input.recordId } : {}) }, key);
       await this.rows.updateOne({ _id: row._id, userId: row.userId }, { $set: { [`brewInterviewMessages.${slot}`]: messages.map(message => message.id) } });
-      return { answered: result.progress.answered, limit: INTERVIEW_QUESTION_LIMIT };
+      const target = result.answer ? selected.find(record => record.id === result.answer.createdRecordId) : undefined;
+      const saved: AgentInterviewSaved | undefined = result.answer ? { recordId: result.answer.createdRecordId, title: target?.title ?? "인터뷰 답변", transcript, targetRecordId: target?.id ?? null, targetTitle: target?.title ?? null, state: target ? "applied" : "saved" } : undefined;
+      if (saved?.targetRecordId && before) {
+        await this.documents.syncExternalBody(row.userId, saved.targetRecordId);
+        const after = await this.documents.bootstrap(row.userId, saved.targetRecordId);
+        const revisions = await this.documents.listRevisions(row.userId, saved.targetRecordId);
+        const restore = revisions.find(revision => revision.beforeVersion === before.documentVersion && revision.summary === "외부 변경 전");
+        if (restore) { saved.restoreRevisionId = restore.id; saved.documentVersion = after.documentVersion; }
+      }
+      return { answered: result.progress.answered, limit: INTERVIEW_QUESTION_LIMIT, saved };
     } catch (error) {
       if (error instanceof InterviewError && error.statusCode === 409) throw new AgentToolRejection([error.message === "interview question limit reached" ? `질문은 ${INTERVIEW_QUESTION_LIMIT}개까지 저장됩니다. 질문을 멈추고 「디자인 고르기」를 안내하십시오.` : error.message === "brew is past the interview" ? "디자인 단계로 넘어간 제작입니다. 더 저장하지 않습니다." : "이 근거로는 저장할 수 없습니다. 다른 근거로 물으십시오."]);
       throw error;
     }
+  }
+  async undoInterviewAnswer(userId: string, id: string, toolId: string) {
+    return this.brewQueue.run(id, async () => {
+      const row = await this.owned(userId, id);
+      if (row.run?.status === "running") throw new AgentChatError(409, "응답이 끝난 뒤 되돌려 주세요.");
+      const tool = row.messages.flatMap(message => message.tools).find(item => item.id === toolId);
+      const saved = tool?.interviewSaved;
+      if (!saved?.restoreRevisionId || saved.documentVersion === undefined) throw new AgentChatError(404, "되돌릴 기록 반영을 찾지 못했습니다.");
+      if (saved.state === "undone") return view(row);
+      const current = await this.documents.bootstrap(userId, saved.recordId);
+      if (current.documentVersion !== saved.documentVersion) throw new AgentChatError(409, "이후에 기록이 수정되었습니다. 기록의 변경 이력에서 복원해 주세요.", "이후에 기록이 수정되었습니다. 기록의 변경 이력에서 복원해 주세요.");
+      await this.documents.restoreRevision(userId, saved.restoreRevisionId, current.documentVersion, saved.recordId);
+      saved.state = "undone";
+      await this.rows.updateOne({ _id: id, userId, version: row.version }, { $set: { messages: row.messages, updatedAt: new Date().toISOString() }, $inc: { version: 1 } });
+      return this.get(userId, id);
+    });
   }
   /** 다시 해 볼 수 있는 실패를 다시 큐에 넣는다. 그렇지 않은 상태에서는 지금 상태만 돌려준다. */
   async retryBrewStart(userId: string, id: string, startId: string): Promise<AgentBrewStartState> {
@@ -1229,7 +1277,8 @@ export class AgentChatService {
         startBrew: input => this.startBrew(row, input),
         startFreeBrew: input => this.startFreeBrew(row, input),
         importPosting: input => this.importPosting(row, input),
-        saveInterviewAnswer: input => this.saveInterviewAnswer(row, input),
+        saveInterviewAnswer: input => this.brewQueue.run(row._id, () => this.saveInterviewAnswer(row, input)),
+        beginDesign: brewId => this.brewQueue.run(row._id, () => this.prepareDesign(row, brewId)),
         readRepository: url => this.readRepository(url),
         attachWorkMaterials: input => this.attachWorkMaterials(row, input),
         proposeDesign: input => this.proposeDesign(row, input),
@@ -1263,7 +1312,8 @@ export class AgentChatService {
           beforeDocuments.set(proposal.proposalId, before);
           return proposal;
         },
-        searchJobs: search => this.searchJobs(row.userId, search),
+        searchJobs: search => this.searchJobs(row, search),
+        searchState: (await this.owned(row.userId, row._id)).search,
         searchActivities: search => this.searchActivities(row.userId, search),
         goalDemand: () => this.goalDemand(row.userId),
         recordDiagnosis: assessment => this.recordDiagnosis(row.userId, [...row.messages.slice(0, -1), message], assessment),

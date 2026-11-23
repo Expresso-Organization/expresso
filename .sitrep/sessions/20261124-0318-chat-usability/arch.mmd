@@ -1,0 +1,12 @@
+flowchart TD
+  Chat[대화와 현재 단계] --> Search[검색 조건 병합]
+  Search --> Jobs[(공고와 위치)]
+  Chat --> Answer[인터뷰 원문 저장]
+  Answer --> Record[(프로젝트와 변경 이력)]
+  Record --> Design[디자인 전환]
+  Chat --> Design
+  Design --> Verify[통합·화면 검증]
+  classDef done fill:#d1fae5,stroke:#059669,color:#000000
+  classDef doing fill:#fef3c7,stroke:#d97706,color:#000000
+  class Chat,Search,Jobs,Answer,Record,Design done
+  class Verify done

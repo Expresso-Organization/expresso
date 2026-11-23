@@ -14,6 +14,7 @@ function Row({ item }: { item: AgentFindItem }) {
     <span className={styles.text}>
       <span className={styles.title}>{item.title}</span>
       <span className={styles.sub}>{[item.sub, ...item.meta].filter(Boolean).join(" · ")}</span>
+      {item.matchNote ? <span className={styles.note}>{item.matchNote}</span> : null}
     </span>
     {item.daysLeft !== null && item.daysLeft >= 0 ? <span className={styles.deadline} data-urgent={item.daysLeft <= URGENT_DAYS || undefined}>D-{item.daysLeft}</span> : null}
     <Icon name={item.external ? "arrow-square-out" : "caret-right"} size={12} className={styles.go} />
@@ -35,14 +36,15 @@ export function ListPart({ list }: { list: AgentFindList }) {
       <span className={styles.heading}>{list.title}</span>
       <span className={styles.count}>{list.total > list.items.length ? `${list.total}건 중 ${list.items.length}건` : `${list.items.length}건`}</span>
     </header>
+    {list.conditions?.length ? <ul className={styles.conditions} aria-label="적용한 검색 조건">{list.conditions.map(condition => <li key={condition}>{condition}</li>)}</ul> : null}
     {list.items.length
-      ? <ul className={styles.rows}>{list.items.map(item => <li key={`${item.kind}:${item.id}`}><Row item={item} /></li>)}</ul>
+      ? <ul className={styles.rows}>{[...list.items].sort((a, b) => Number(a.locationStatus === "unknown") - Number(b.locationStatus === "unknown")).map((item, index, items) => <li key={`${item.kind}:${item.id}`}>{item.locationStatus === "unknown" && (index === 0 || items[index - 1]?.locationStatus !== "unknown") ? <p className={styles.sectionLabel}>상세 근무지 확인이 필요한 후보</p> : null}<Row item={item} /></li>)}</ul>
       : <p className={styles.empty}>조건에 맞는 것을 찾지 못했습니다.</p>}
   </section>;
 }
 
 /** 찾는 동안의 자리. 찾지 못했을 때는 아무것도 그리지 않는다. */
 export function ListPartPending({ failed, activity }: { failed: boolean; activity: boolean }) {
-  if (failed) return null;
+  if (failed) return <p role="alert" className={styles.empty}>검색을 실행하지 못했습니다. 기존 결과를 확인하거나 다시 요청해 주세요.</p>;
   return <p className={`${styles.pending} ex-anim-shimmer`} role="status">{activity ? "공모전과 해커톤을 찾고 있습니다." : "공고를 찾고 있습니다."}</p>;
 }

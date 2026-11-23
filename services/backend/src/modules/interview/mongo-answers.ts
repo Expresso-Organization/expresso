@@ -48,7 +48,7 @@ export async function getMongoAnswerResult(context: MongoContext, userId: string
   });
 }
 
-export async function saveMongoAnswer(context: MongoContext, userId: string, sessionId: string, questionId: string, idempotencyKey: string, inputValue: SaveInterviewAnswer) {
+export async function saveMongoAnswer(context: MongoContext, userId: string, sessionId: string, questionId: string, idempotencyKey: string, inputValue: SaveInterviewAnswer, targetRecordId?: string) {
   const input = SaveInterviewAnswerSchema.parse(inputValue);
   const hash = requestHash(questionId, input);
   let answerId: string;
@@ -66,26 +66,39 @@ export async function saveMongoAnswer(context: MongoContext, userId: string, ses
       const now = new Date();
       if (existing) {
         if (!existing.createdRecordId) throw new Error("interview answer record is missing");
+        const target = await db.careerRecords.findOne({ _id: existing.createdRecordId, userId, deletedAt: null }, options);
+        if (!target) throw new InterviewError(409, "answer record is no longer writable");
+        const change = await db.answerRecordChanges.findOne({ userId, answerId: existing._id }, options);
+        const linked = Array.isArray(change?.changedFields) && change.changedFields.includes("source_record");
+        const oldBody = target.bodyMd ?? "";
+        const answerPrefix = `## 인터뷰 보완\n\n${question.text}\n\n`;
+        if (linked && !oldBody.includes(answerPrefix + existing.transcript)) throw new InterviewError(409, "기록의 답변 부분이 편집되었습니다. 현재 기록을 확인한 뒤 다시 반영해 주세요.");
+        const bodyMd = linked ? oldBody.replace(answerPrefix + existing.transcript, answerPrefix + input.transcript) : input.transcript;
         const updatedRecord = await db.careerRecords.findOneAndUpdate(
-          { _id: existing.createdRecordId, userId, origin: "interview", deletedAt: null },
-          { $set: { title: fallbackTitle(input.transcript), bodyMd: input.transcript, updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } },
+          { _id: target._id, userId, version: target.version, deletedAt: null },
+          { $set: { ...(linked ? {} : { title: fallbackTitle(input.transcript) }), bodyMd, updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } },
           { ...options, returnDocument: "after" },
         );
         if (!updatedRecord) throw new InterviewError(409, "answer record is no longer writable");
         await db.answers.updateOne({ _id: existing._id, userId, version: existing.version }, { $set: { inputType: input.inputType, transcript: input.transcript, inputIdempotencyKey: idempotencyKey, requestHash: hash, recordVersion: updatedRecord.version, updatedAt: now }, $inc: { version: 1 } }, options);
-        await db.answerRecordChanges.updateOne({ userId, answerId: existing._id }, { $set: { changeType: "strengthened", changedFields: ["title", "body_md"], sourceQuote: input.transcript, createdAt: now } }, options);
-        await addMongoOutboxEvent(tx, { userId, topic: "record.cleanup", payload: { answerId: existing._id, userId }, idempotencyKey: `record-cleanup:${existing._id}:${hash.slice(0, 16)}` });
+        await db.answerRecordChanges.updateOne({ userId, answerId: existing._id }, { $set: { changeType: "strengthened", changedFields: linked ? ["body_md", "source_record"] : ["title", "body_md"], sourceQuote: input.transcript, createdAt: now } }, options);
+        if (!linked) await addMongoOutboxEvent(tx, { userId, topic: "record.cleanup", payload: { answerId: existing._id, userId }, idempotencyKey: `record-cleanup:${existing._id}:${hash.slice(0, 16)}` });
         await refreshMongoInterviewProgress(tx, userId, sessionId);
         return existing._id;
       }
       const category = await db.careerCategories.findOne({ userId, key: "experience" }, options);
       if (!category) throw new InterviewError(409, "experience category is missing");
-      const record: CareerRecordDoc = { _id: randomUUID(), userId, categoryId: category._id, title: fallbackTitle(input.transcript), status: "draft", origin: "interview", properties: {}, bodyMd: input.transcript, version: 1, updatedAt: now, deletedAt: null, purgeAfter: null, referenceVersion: 0 };
-      const answer: AnswerDoc = { _id: randomUUID(), userId, questionId, inputType: input.inputType, transcript: input.transcript, createdRecordId: record._id, inputIdempotencyKey: idempotencyKey, requestHash: hash, version: 1, recordVersion: 1, updatedAt: now };
-      await db.careerRecords.insertOne(record, options);
+      const target = targetRecordId ? await db.careerRecords.findOne({ _id: targetRecordId, userId, deletedAt: null }, options) : null;
+      if (targetRecordId && !target) throw new InterviewError(404, "target record not found");
+      const record: CareerRecordDoc = target ?? { _id: randomUUID(), userId, categoryId: category._id, title: fallbackTitle(input.transcript), status: "draft", origin: "interview", properties: {}, bodyMd: input.transcript, version: 1, updatedAt: now, deletedAt: null, purgeAfter: null, referenceVersion: 0 };
+      if (target) {
+        const updated = await db.careerRecords.updateOne({ _id: target._id, userId, version: target.version, deletedAt: null }, { $set: { bodyMd: `${target.bodyMd ?? ""}\n\n## 인터뷰 보완\n\n${question.text}\n\n${input.transcript}`, updatedAt: now }, $inc: { version: 1, referenceVersion: 1 } }, options);
+        if (!updated.matchedCount) throw new InterviewError(409, "answer was changed concurrently");
+      } else await db.careerRecords.insertOne(record, options);
+      const answer: AnswerDoc = { _id: randomUUID(), userId, questionId, inputType: input.inputType, transcript: input.transcript, createdRecordId: record._id, inputIdempotencyKey: idempotencyKey, requestHash: hash, version: 1, recordVersion: record.version + (target ? 1 : 0), updatedAt: now };
       await db.answers.insertOne(answer, options);
-      await db.answerRecordChanges.insertOne({ _id: randomUUID(), userId, answerId: answer._id, recordId: record._id, changeType: "created", changedFields: ["title", "body_md"], sourceQuote: input.transcript, createdAt: now }, options);
-      await addMongoOutboxEvent(tx, { userId, topic: "record.cleanup", payload: { answerId: answer._id, userId }, idempotencyKey: `record-cleanup:${answer._id}:${hash.slice(0, 16)}` });
+      await db.answerRecordChanges.insertOne({ _id: randomUUID(), userId, answerId: answer._id, recordId: record._id, changeType: target ? "strengthened" : "created", changedFields: target ? ["body_md", "source_record"] : ["title", "body_md"], sourceQuote: input.transcript, createdAt: now }, options);
+      if (!target) await addMongoOutboxEvent(tx, { userId, topic: "record.cleanup", payload: { answerId: answer._id, userId }, idempotencyKey: `record-cleanup:${answer._id}:${hash.slice(0, 16)}` });
       await refreshMongoInterviewProgress(tx, userId, sessionId);
       return answer._id;
     });

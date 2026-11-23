@@ -15,6 +15,13 @@ const activity: AgentFindItem = { kind: "activity", id: "wevity:1", title: "데�
 const list = (overrides: Partial<AgentFindList> = {}): AgentFindList => ({ title: "백엔드 · 신입 공고", items: [job, activity], total: 9, ...overrides });
 
 describe("찾은 것의 목록", () => {
+  it("적용 조건과 근거를 보여 주며 상세 근무지 미확인은 뒤에 묶는다", () => {
+    render(<ListPart list={list({ conditions: ["한국", "판교 · 강남 주변 20km"], items: [{ ...job, id: "unknown", locationStatus: "unknown", matchNote: "상세 근무지 확인 필요" }, { ...job, id: "known", locationStatus: "known", matchNote: "판교 · 검색 지역에서 약 0km" }] })} />);
+    expect(screen.getByRole("list", { name: "적용한 검색 조건" }).textContent).toContain("주변 20km");
+    expect(screen.getByText("상세 근무지 확인이 필요한 후보")).toBeTruthy();
+    expect(screen.getAllByRole("link")[0]!.textContent).toContain("약 0km");
+  });
+
   it("공고는 앱의 공고 화면으로, 활동은 출처로 새 창에서 연다", () => {
     render(<ListPart list={list()} />);
     const inside = screen.getByRole("link", { name: /백엔드 엔지니어/ });

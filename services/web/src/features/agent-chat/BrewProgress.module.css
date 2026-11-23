@@ -1,0 +1,15 @@
+/* 기존 카드·버튼 토큰과 web-comfortable의 간격을 공유한다. */
+.root { margin-bottom: var(--ex-spacing-sm); padding: var(--ex-spacing-sm) var(--ex-spacing-md); border: 1px solid var(--ex-border); border-radius: var(--ex-radius-control); background: var(--ex-bg-sunken); color: var(--ex-fg); font-family: var(--ex-font-ui); }
+.line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--ex-spacing-sm); }
+.steps { display: flex; align-items: center; flex-wrap: wrap; gap: var(--ex-spacing-md); padding: 0; margin: 0; list-style: none; font-size: var(--ex-text-2xs); }
+.steps li { display: flex; align-items: center; gap: var(--ex-spacing-sm); color: var(--ex-fg-muted); }
+.steps li[data-state="current"] { color: var(--ex-fg); font-weight: 600; }
+.steps li[data-state="done"] { color: var(--ex-status-success-text); }
+.line button { display: inline-flex; align-items: center; justify-content: center; gap: var(--ex-spacing-sm); min-height: 40px; border: 1px solid var(--ex-border); border-radius: var(--ex-radius-control); background: var(--ex-bg-tint); color: var(--ex-fg); padding: var(--ex-spacing-sm) var(--ex-spacing-md); font: inherit; font-size: var(--ex-text-xs); cursor: pointer; transition: background var(--ex-motion-instant); }
+.line button:hover:not(:disabled) { background: var(--ex-bg-tint-strong); }
+.line button:disabled { opacity: .5; cursor: default; }
+.line button:focus-visible { outline: none; box-shadow: var(--ex-focus-ring); }
+.error { margin: var(--ex-spacing-sm) 0 0; color: var(--ex-status-danger-text); font-size: var(--ex-text-xs); }
+@media (prefers-reduced-motion: reduce) { .line button { transition: none; } }
+
+@media (max-width: 767px) { .line button { min-height: 48px; } }

@@ -20,6 +20,25 @@ async function connectTools(overrides: Partial<AgentInput> = {}) {
 }
 const base = () => ({ userId: "00000000-0000-4000-8000-0000000000aa", records: { list: vi.fn(async () => ({ categories: [], records: [] })), read: vi.fn(async () => []) }, review: vi.fn(), saveRecord: vi.fn(), readLink: vi.fn(), recordCategories: [], askForm: vi.fn(), jobGoal: null, goalDraft: vi.fn(), gapReview: vi.fn(), planDraft: vi.fn(), replanDraft: vi.fn(), readPlan: vi.fn(), propose: vi.fn(), page: { read: vi.fn(), edit: vi.fn() }, askChoice: vi.fn(), memory: null, updateMemory: vi.fn(), makeCommitment: vi.fn(), updateCommitment: vi.fn(), goalDemand: vi.fn(), recordDiagnosis: vi.fn(), appendToRecord: vi.fn(), searchJobs: vi.fn(), searchActivities: vi.fn(), brews: [], startBrew: vi.fn(), startFreeBrew: vi.fn(), importPosting: vi.fn(), saveInterviewAnswer: vi.fn(), readRepository: vi.fn(), attachWorkMaterials: vi.fn(), proposeDesign: vi.fn(), reviseDesign: vi.fn(), portfolioNow: vi.fn(async () => null), suggestPortfolio: vi.fn() });
 describe("Claude 채팅 실행 어댑터", () => {
+  it("자연어 디자인 전환 도구가 제품 서비스의 결과를 카드로 전달한다", async () => {
+    const brewId = "00000000-0000-4000-8000-000000000001";
+    const brewDesign = { brewId, jobPostingId: null, designMessageId: null };
+    const beginDesign = vi.fn(async () => brewDesign);
+    const { client, emit } = await connectTools({ beginDesign });
+    const result = await client.callTool({ name: "begin_design", arguments: { brewId } });
+    expect(result.isError).not.toBe(true); expect(beginDesign).toHaveBeenCalledWith(brewId);
+    expect(emit).toHaveBeenCalledWith({ type: "tool", tool: expect.objectContaining({ status: "complete", brewDesign }) });
+    await client.close();
+  });
+  it("같은 검색은 원본 결과를 재사용하고 적용 조건을 모델에게 돌려준다", async () => {
+    const searchJobs = vi.fn(async () => ({ title: "조건에 맞는 공고", items: [], total: 0, conditions: ["한국", "판교 우선"] }));
+    const { client } = await connectTools({ searchJobs });
+    const call = { name: "search_jobs", arguments: { families: ["데이터"], locations: ["판교", "강남"], limit: 5 } };
+    const first = await client.callTool(call); await client.callTool(call);
+    expect(searchJobs).toHaveBeenCalledTimes(1); expect(JSON.stringify(first)).toContain("판교 우선");
+    await client.close();
+  });
+
   it("글 덩어리가 새로 시작되면 앞의 글과 빈 줄로 띄운다. 도구 앞에 한 말이 마지막 답변과 붙지 않는다", async () => {
     const events: AgentEvent[] = [];
     const delta = (text: string) => ({ type: "stream_event", event: { type: "content_block_delta", delta: { type: "text_delta", text } } });
@@ -46,7 +65,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     await new ClaudeAgentRuntime().run({ messages: [], context: [], signal: new AbortController().signal, emit: async event => { events.push(event); }, ...base() });
     expect(events).toEqual([{ type: "text", text: "안녕하세요" }]);
     expect(sdk.query.mock.lastCall![0].options).toMatchObject({ tools: [], settingSources: [], strictMcpConfig: true, persistSession: false, permissionMode: "dontAsk" });
-    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__start_free_portfolio", "mcp__expresso__import_job_posting", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen", "mcp__expresso__read_link", "mcp__expresso__suggest_portfolio"]);
+    expect(sdk.query.mock.lastCall![0].options.allowedTools).toEqual(["mcp__expresso__propose_record_edit", "mcp__expresso__list_career_records", "mcp__expresso__read_career_records", "mcp__expresso__record_requirement_review", "mcp__expresso__save_record", "mcp__expresso__propose_job_goal_update", "mcp__expresso__record_gap_review", "mcp__expresso__propose_preparation_plan", "mcp__expresso__read_preparation_plan", "mcp__expresso__propose_replan", "mcp__expresso__read_page_element", "mcp__expresso__edit_page_element", "mcp__expresso__ask_choice", "mcp__expresso__ask_form", "mcp__expresso__update_memory", "mcp__expresso__make_commitment", "mcp__expresso__update_commitment", "mcp__expresso__read_goal_demand", "mcp__expresso__record_diagnosis", "mcp__expresso__append_to_record", "mcp__expresso__search_jobs", "mcp__expresso__search_activities", "mcp__expresso__show_table", "mcp__expresso__start_portfolio", "mcp__expresso__start_free_portfolio", "mcp__expresso__import_job_posting", "mcp__expresso__read_repository", "mcp__expresso__attach_work_materials", "mcp__expresso__save_interview_answer", "mcp__expresso__begin_design", "mcp__expresso__propose_design_options", "mcp__expresso__revise_design_screen", "mcp__expresso__read_link", "mcp__expresso__suggest_portfolio"]);
   });
   it("중단 신호를 SDK에 전달한다", async () => {
     const controller = new AbortController(); let stopped = false;
@@ -145,7 +164,7 @@ describe("Claude 채팅 실행 어댑터", () => {
     expect(result.isError).toBeFalsy();
     expect(saveInterviewAnswer).toHaveBeenCalledWith(answer);
     expect(JSON.parse((result.content as { text: string }[])[0]!.text)).toMatchObject({ saved: true, answeredQuestions: 1, limit: 6 });
-    expect(emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ name: "답 저장", status: "complete", summary: answer.question });
+    expect(emit.mock.calls.map(([event]) => event).filter(event => event.type === "tool").at(-1)!.tool).toMatchObject({ name: "답 저장", status: "complete", summary: "인터뷰 답변을 커리어 기록으로 저장했습니다." });
 
     const refused = await connectTools({ saveInterviewAnswer: vi.fn(async () => { throw new AgentToolRejection(["디자인 단계로 넘어간 제작입니다."]); }) });
     const rejected = await refused.client.callTool({ name: "save_interview_answer", arguments: answer });
@@ -479,8 +498,8 @@ describe("Claude 채팅 실행 어댑터", () => {
     const fifth = await client.callTool({ name: "search_jobs", arguments: {} });
     expect(fifth.isError).toBe(true);
     expect((fifth.content as { text: string }[])[0]!.text).toContain("이미 네 번 찾았습니다");
-    expect(searchJobs).toHaveBeenCalledTimes(3);
-    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000092", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "l", name: "공고 찾기", status: "complete", summary: "1건", list: { title: "공고", items: [item], total: 1 } }] }])[0]!.tools).toEqual([{ name: "공고 찾기", summary: "1건", list: [{ kind: "job", id: item.id, title: item.title, sub: item.sub, daysLeft: 12 }] }]);
+    expect(searchJobs).toHaveBeenCalledTimes(2);
+    expect(conversationForModel([{ id: "00000000-0000-4000-8000-000000000092", role: "assistant", text: "", createdAt: "2026-11-20T00:00:00.000Z", tools: [{ id: "l", name: "공고 찾기", status: "complete", summary: "1건", list: { title: "공고", items: [item], total: 1 } }] }])[0]!.tools).toEqual([{ name: "공고 찾기", summary: "1건", list: [{ kind: "job", id: item.id, title: item.title, sub: item.sub, meta: item.meta, daysLeft: 12 }] }]);
   });
   it("비교 표는 열과 줄을 카드 결과로 남기고, 칸 수가 열 수와 다르면 돌려보낸다", async () => {
     const { client, emit } = await connectTools();

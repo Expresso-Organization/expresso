@@ -34,7 +34,7 @@ export function AgentConsentDialog({ open, onOpenChange, onConsented }: { open: 
         <dl className={styles.consentFacts}>
           <div><Icon name="chat-teardrop-text" size={20} /><div><dt>전달되는 정보</dt><dd>입력한 대화와 연결한 커리어 기록</dd></div></div>
           <div><Icon name="sparkle" size={20} /><div><dt>정보를 사용하는 곳</dt><dd>Anthropic의 Claude 모델<small>답변과 기록 변경 제안을 만드는 데 사용합니다.</small></dd></div></div>
-          <div><Icon name="check-square" size={20} /><div><dt>기록에 반영하는 순간</dt><dd>변경 제안을 직접 확인하고 승인한 뒤</dd></div></div>
+          <div><Icon name="check-square" size={20} /><div><dt>기록에 반영하는 순간</dt><dd>대화에서 저장·반영을 요청한 뒤. 반영 결과는 카드에서 확인하고 되돌릴 수 있습니다.</dd></div></div>
         </dl>
         <div className={styles.consentChoice}><Icon name="shield-check" size={18} /><p>동의는 선택이며, 설정에서 언제든 철회할 수 있습니다.<small>동의하지 않으면 AI 채팅 전송이 제한됩니다.</small></p></div>
         {issue ? <p role="alert" className={styles.error}>{issue}</p> : null}

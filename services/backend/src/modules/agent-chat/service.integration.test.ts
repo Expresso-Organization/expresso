@@ -70,6 +70,29 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
     expect(received).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "portfolio", id, data: expect.objectContaining({ portfolio: expect.objectContaining({ title: "자료 선택 검증", sections: expect.arrayContaining([expect.objectContaining({ blocks: expect.arrayContaining([expect.objectContaining({ content: { text: "배포 시간을 30% 단축했습니다." } })]) })]) }) }) })]));
     await expect(service.create(other, [{ kind: "portfolio", id }])).rejects.toMatchObject({ statusCode: 404 });
   });
+  it("인터뷰 반영 카드는 원본 문서 이력으로 되돌리고 이후 수정은 보존한다", async () => {
+    const categoryId = (await career.listCategories(userId))[0]!.id;
+    const created = (await career.createRecord(userId, randomUUID(), { categoryId, title: "반영 복원 검증", bodyMd: "기존 프로젝트 내용", properties: {} })).record;
+    const before = await documents.bootstrap(userId, created.id);
+    const record = await career.getRecord(userId, created.id);
+    await career.updateRecord(userId, created.id, record.version, { bodyMd: "기존 프로젝트 내용\n\n수만 건을 배치 처리했습니다." });
+    await documents.syncExternalBody(userId, created.id);
+    const after = await documents.bootstrap(userId, created.id);
+    const revision = (await documents.listRevisions(userId, created.id)).find(item => item.summary === "외부 변경 전" && item.beforeVersion === before.documentVersion)!;
+    const service = make(null); const row = await service.create(userId, []); const toolId = randomUUID();
+    await mongoCollections(fixture.resource.db).agentConversations.updateOne({ _id: row.id }, { $push: { messages: { id: randomUUID(), role: "assistant", text: "반영했습니다.", tools: [{ id: toolId, name: "답 저장", status: "complete", summary: "반영", interviewSaved: { recordId: created.id, title: created.title, targetRecordId: created.id, targetTitle: created.title, transcript: "수만 건을 배치 처리했습니다.", state: "applied", restoreRevisionId: revision.id, documentVersion: after.documentVersion } }], createdAt: new Date().toISOString() } } });
+    await expect(service.undoInterviewAnswer(other, row.id, toolId)).rejects.toMatchObject({ statusCode: 404 });
+    const changed = await career.getRecord(userId, created.id);
+    await career.updateRecord(userId, created.id, changed.version, { bodyMd: "사용자가 추가 편집한 내용" });
+    await expect(service.undoInterviewAnswer(userId, row.id, toolId)).rejects.toMatchObject({ statusCode: 409 });
+    // 최신 반영 버전이 일치할 때만 복원한다.
+    const current = await documents.bootstrap(userId, created.id);
+    await mongoCollections(fixture.resource.db).agentConversations.updateOne({ _id: row.id }, { $set: { "messages.0.tools.0.interviewSaved.documentVersion": current.documentVersion } });
+    const restored = await service.undoInterviewAnswer(userId, row.id, toolId);
+    expect(restored.messages[0]!.tools[0]!.interviewSaved?.state).toBe("undone");
+    expect((await documents.bootstrap(userId, created.id)).document.content).toEqual(before.document.content);
+    expect((await service.undoInterviewAnswer(userId, row.id, toolId)).messages[0]!.tools[0]!.interviewSaved?.state).toBe("undone");
+  });
   it("저장된 대화를 다른 서비스 인스턴스에서 복원하고 중복 요청을 한 번만 처리한다", async () => {
     const service = make({ run: async input => { await input.emit({ type: "text", text: "첫 " }); await input.emit({ type: "text", text: "응답" }); } });
     const conversation = await service.create(userId, []); const input = { requestId: randomUUID(), text: "질문" };
@@ -413,7 +436,7 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       if (!wired) { await expect(input.searchJobs({ limit: 5 })).rejects.toBeInstanceOf(AgentToolRejection); await expect(input.searchActivities({ limit: 5 })).rejects.toBeInstanceOf(AgentToolRejection); }
       else {
         results.push(await input.searchJobs({ family: "백엔드 개발자", technology: "Kafka", location: "서울", experience: 0, limit: 2 }));
-        results.push(await input.searchJobs({ family: "기획", query: "서비스", interested: true, limit: 5 }));
+        results.push(await input.searchJobs({ family: "기획", query: "서비스", interested: true, reset: true, limit: 5 }));
         results.push(await input.searchActivities({ kind: "hackathon", query: "데이터", limit: 5 }));
       }
       await input.emit({ type: "text", text: "찾았습니다." });
@@ -425,8 +448,8 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       await expect.poll(async () => (await service.get(userId, conversation.id)).run?.status).toBe("complete");
     }
     // 직군은 사용자의 말로 와도 공고에 매긴 직군으로 옮긴다. 넘긴 공고를 뺄 만큼 더 읽는다.
-    expect(list).toHaveBeenNthCalledWith(1, userId, { technology: "Kafka", family: "백엔드", location: "서울", experience: 0, deadline: "open", sort: "recent", page: 1, limit: 4 });
-    expect(results[0]).toMatchObject({ title: "백엔드 · Kafka · 서울 · 신입 공고", total: 11, items: [{ kind: "job", id: first, href: `/jobs/${first}`, external: false }, { id: third }] });
+    expect(list).toHaveBeenNthCalledWith(1, userId, { technology: "Kafka", families: ["백엔드"], locations: ["서울"], country: "한국", experience: 0, deadline: "open", sort: "match", page: 1, limit: 4 });
+    expect(results[0]).toMatchObject({ title: "조건에 맞는 공고", conditions: expect.arrayContaining(["한국", "신입 지원 가능"]), total: 11, items: [{ kind: "job", id: first, href: `/jobs/${first}`, external: false }, { id: third }] });
     // 직군으로 옮기지 못한 말은 글 검색에 더한다. 관심 공고는 마감한 것도 본다.
     expect(list).toHaveBeenNthCalledWith(2, userId, { q: "서비스 기획", interested: true, sort: "deadline", page: 1, limit: 7 });
     expect(activities).toHaveBeenCalledWith({ kind: "hackathon", limit: 100 });

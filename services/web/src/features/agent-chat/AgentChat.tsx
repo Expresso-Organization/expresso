@@ -18,6 +18,7 @@ import { AgentConsentDialog } from "./AgentConsentDialog";
 import { BrewDesignCard } from "./BrewDesignCard";
 import { BrewGenerationCard } from "./BrewGenerationCard";
 import { DesignBrews } from "./design-brews";
+import { BrewProgress } from "./BrewProgress";
 import { BrewInterviewCard } from "./BrewInterviewCard";
 import { BrewMaterialsCard } from "./BrewMaterialsCard";
 import { BrewStartCard } from "./BrewStartCard";
@@ -116,7 +117,10 @@ function PageWelcome({ page }: { page: AgentChatPage }) {
 }
 /** 보낼 말이 가리킬 요소. 다듬기 화면에서 요소를 골랐을 때만 입력창 위에 보인다. */
 /** 입력창 위 — 고칠 요소와 붙일 그림. */
-function ComposerHead() { return <><ComposerTarget /><ComposerAttachments /></>; }
+function ComposerHead() {
+  const state = useContext(ChatContext)!;
+  return <><BrewProgress conversation={state.conversation} disabled={state.pending || state.conversation?.run?.status === "running"} onInterview={state.beginInterview} onDesign={state.beginDesign} onResume={async brewId => { Array.from(document.querySelectorAll<HTMLElement>(`[data-brew-progress="${brewId}"]`)).at(-1)?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" }); }} /><ComposerTarget /><ComposerAttachments /></>;
+}
 /** 보낸 말 위 — 가리킨 요소와 붙인 그림. */
 function UserMessageHead() { return <><UserMessageTarget /><SentAttachments /></>; }
 function ComposerTarget() {
@@ -179,11 +183,11 @@ const RecordTool: ToolCallMessagePartComponent = props => {
   // 「디자인 고르기」는 이 대화에서 디자인을 연다. 연 뒤에는 대화 아래의 「디자인」 카드가 이어 가므로 잠긴 카드에 링크를 두지 않는다.
   if (tool?.brewInterview) { const { brewId } = tool.brewInterview; return step(<BrewInterviewCard interview={tool.brewInterview} refreshKey={savedAnswers} continuesInChat={!!state.conversation?.messages.some(message => message.tools.some(item => item.brewDesign?.brewId === brewId))} onDesign={() => state.beginDesign(brewId)} />, null); }
   // 서버가 붙인 「디자인」. 디자인 대화의 답 하나를 그린다. 「첫 화면 보기」만 이 대화의 경로로 보내 그 카드가 대화에 붙는다.
-  if (tool?.brewDesign) return step(<BrewDesignCard design={tool.brewDesign} />, null);
+  if (tool?.brewDesign) return step(<div data-brew-progress={tool.brewDesign.brewId}><BrewDesignCard design={tool.brewDesign} /></div>, null);
   // 에이전트가 받은 작업물을 기록에 붙였다. 무엇을 어느 기록에 붙였는지 보인다.
   if (tool?.workMaterials) return step(<WorkMaterialsCard materials={tool.workMaterials} />, null);
   // 서버가 붙인 「생성」. 진행은 제작별 상태가 읽고, 지면이 서면 가운데 무대로 간다.
-  if (tool?.brewGeneration) return step(<BrewGenerationCard generation={tool.brewGeneration} />, null);
+  if (tool?.brewGeneration) return step(<div data-brew-progress={tool.brewGeneration.brewId}><BrewGenerationCard generation={tool.brewGeneration} /></div>, null);
   // 카드는 등록표(tool-parts.tsx)가 정한다. 카드가 요약을 담으므로 단계 요약은 비운다.
   const part = tool ? toolPartFor(tool) : undefined;
   if (tool && part?.placement === "trace") return step(part.render(tool, partContext(state, page, busy, false)), null);
@@ -195,7 +199,7 @@ function partContext(state: ReturnType<typeof useAgentConversation>, page: Agent
     conversationId: state.id, conversationVersion: state.conversation?.version, busy, canAnswer,
     pageEditLatest: edit => pageEditLatest(page, edit),
     decideDraft: state.decideDraft, decideGoalDraft: state.decideGoalDraft, decidePlanDraft: state.decidePlanDraft, decideReplanDraft: state.decideReplanDraft,
-    undoPageEdit: state.undoPageEdit, answerPart: state.answerPart, undoSavedRecord: state.undoSavedRecord,
+    undoPageEdit: state.undoPageEdit, answerPart: state.answerPart, undoSavedRecord: state.undoSavedRecord, undoInterviewAnswer: state.undoInterviewAnswer,
   };
 }
 /**
@@ -239,7 +243,7 @@ const convertMessage = (message: AgentMessage): ThreadMessageLike => ({
   ...(message.selection || message.attachments?.length ? { metadata: { custom: { ...(message.selection ? { selection: message.selection } : {}), ...(message.attachments?.length ? { attachments: message.attachments } : {}) } } } : {}),
   content: [
     // 답변 글 아래에 그리는 부품(등록표의 below)은 작업 흔적에 넣지 않는다. BelowParts가 저장된 메시지에서 직접 그린다.
-    ...message.tools.filter(tool => !isBelowTool(tool)).map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
+    ...message.tools.filter(tool => !isBelowTool(tool) && !(tool.status === "failed" && tool.summary === "도구 입력이 맞지 않아 다시 씁니다." && message.text.trim())).map(tool => ({ type: "tool-call" as const, toolCallId: tool.id, toolName: tool.name, args: {}, argsText: "{}", ...(tool.status === "running" ? {} : { result: { summary: tool.summary }, isError: tool.status === "failed" }) })),
     { type: "text", text: message.text },
   ],
 });
@@ -476,7 +480,7 @@ export function AgentChat({ job, page, standalone = false, fresh = false, chatId
         <DesignBrews cards={designCards} generations={generationCards} onDraw={state.drawDesign} onMake={state.startGeneration} stageHost={host} stagedBrew={stagedBrew} onStage={onStage}>
           <div className={styles.thread}><Thread autoFocus={standalone} composerTransition={fresh ? HOME_COMPOSER_TRANSITION : undefined} components={{ Welcome: ChatWelcome, AssistantHeader: AssistantIdentity, AssistantFooter: BelowParts, ToolFallback: RecordTool, ToolGroup: ExpandedTools, ComposerHeader: ComposerHead, UserMessageHeader: UserMessageHead }} /></div>
         </DesignBrews>
-        <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "기록의 변경은 확인 후 적용됩니다."}</span></div>
+        <div className={styles.footnote}><Icon name="check-circle" size={12} /><span>{page ? "지면 고침은 바로 새 판으로 저장되고 카드에서 되돌릴 수 있습니다." : "저장·반영 결과는 각 카드에서 확인할 수 있습니다."}</span></div>
         {lastRun?.status === "cancelled" ? <div role="status" className={`${styles.status} ${styles.runNotice}`}><span>응답을 중지했습니다.</span>{retryButton}</div> : null}
         {lastRun?.error ? <div role="alert" className={`${styles.error} ${styles.runNotice}`}><span>{lastRun.error}</span>{retryButton}</div> : null}
       </div>

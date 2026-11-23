@@ -64,6 +64,33 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
   }, 60_000);
   afterAll(async () => { await fixture?.dispose(); });
 
+  it("프로젝트 답변은 원본을 보존하며 연결하고 꼬리 답과 재요청에도 기록을 중복 생성하지 않는다", async () => {
+    const db = mongoCollections(fixture.resource.db);
+    const materials = new MongoMaterialsService(fixture.resource);
+    const linkedBrew = (await materials.createBrew(userId, { jobAnalysisId, lengthPreset: "single" })).brewId;
+    const recordId = selectedRecordIds[0]!;
+    await db.brewSources.updateOne({ userId, brewId: linkedBrew, recordId }, { $set: { isSelected: true } });
+    await service.openConversation(userId, linkedBrew);
+    const [base] = await service.questionBases(userId, linkedBrew);
+    const before = (await db.careerRecords.findOne({ _id: recordId }))!.bodyMd;
+    const count = await db.careerRecords.countDocuments({ userId });
+    const input = { basis: base!.basis, question: "수집 작업은 어떤 방식으로 처리했나요?", transcript: "초기에는 수만 건을 배치 처리했습니다.", recordId };
+    const key = `linked:${randomUUID()}`;
+    const first = await service.saveConversationAnswer(userId, linkedBrew, input, key);
+    const again = await service.saveConversationAnswer(userId, linkedBrew, input, key);
+    expect(again.answer.id).toBe(first.answer.id);
+    expect(first.recordChange).toMatchObject({ type: "strengthened", recordId });
+    expect(await db.careerRecords.countDocuments({ userId })).toBe(count);
+    const followup = input.transcript + " 비동기 수집도 적용했습니다.";
+    await service.saveConversationAnswer(userId, linkedBrew, { ...input, transcript: followup }, `linked:${randomUUID()}`);
+    const body = (await db.careerRecords.findOne({ _id: recordId }))!.bodyMd!;
+    expect(body).toContain(before); expect(body).toContain(followup);
+    expect(body.split(input.transcript)).toHaveLength(2);
+    const foreign = (await db.careerRecords.findOne({ userId: otherUserId }))?._id ?? randomUUID();
+    await expect(service.saveConversationAnswer(userId, linkedBrew, { ...input, recordId: foreign }, `linked:${randomUUID()}`)).rejects.toMatchObject({ statusCode: 409 });
+    // 다른 테스트가 같은 원본을 쓴다.
+    await db.careerRecords.updateOne({ _id: recordId }, { $set: { bodyMd: before } });
+  });
   it("lists the grounded bases the question writer chooses from, without a writer", async () => {
     const bases = await service.questionBases(userId, brewId);
     expect(bases.map(({ basis }) => basis.type)).toEqual(["requirement", "requirement", "record_gap", "record_gap"]);

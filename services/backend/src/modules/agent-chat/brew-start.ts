@@ -38,7 +38,7 @@ export interface AgentBrewDeps {
   /** 고를 수 있는 근거와 저장한 질문(`InterviewApi.conversationState`). AI를 부르지 않는다. */
   interview(userId: string, brewId: string): Promise<{ bases: InterviewQuestionBase[]; session: InterviewSession | null }>;
   /** 한 질문의 답을 저장한다. 같은 근거의 질문이 있으면 그 답을 다시 쓴다(`InterviewApi.saveConversationAnswer`). */
-  saveInterviewAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string }, idempotencyKey: string): Promise<InterviewAnswerResult>;
+  saveInterviewAnswer(userId: string, brewId: string, input: { basis: InterviewQuestionBasis; question: string; transcript: string; recordId?: string }, idempotencyKey: string): Promise<InterviewAnswerResult>;
   /** 구성 잡을 맡긴다. 지금의 화면과 같은 키(`recipe:<brewId>`)라 이미 있으면 그 잡이다. */
   startRecipe(userId: string, brewId: string): Promise<unknown>;
   /** 디자인 대화에 견본의 짝으로 그리기를 보낸다. 그 답의 ID를 돌려준다(`DesignChatService.send`). */

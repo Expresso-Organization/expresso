@@ -38,6 +38,18 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("장소 검색 (mongodb)", () => 
     }
   });
 
+  it("여러 지역을 OR로 늘려도 후보가 줄지 않고 중복이 없다", async () => {
+    const single = await service.list(userId, { country: "한국", locations: ["판교"], sort: "match", page: 1, limit: 50 });
+    const expanded = await service.list(userId, { country: "한국", locations: ["판교", "강남", "마포"], sort: "match", page: 1, limit: 50 });
+    expect(expanded.summary.total).toBeGreaterThanOrEqual(single.summary.total);
+    expect(expanded.data.map(job => job.id)).toEqual(expect.arrayContaining(single.data.map(job => job.id)));
+    expect(new Set(expanded.data.map(job => job.id)).size).toBe(expanded.data.length);
+    const strict = await service.list(userId, { country: "한국", locations: ["판교"], locationMode: "strict", sort: "match", page: 1, limit: 50 });
+    expect(strict.data.map(job => job.title)).toEqual(["판교"]);
+    const preferred = await service.list(userId, { country: "한국", locations: ["판교"], locationMode: "prefer", sort: "match", page: 1, limit: 50 });
+    expect(preferred.data[0]?.title).toBe("판교");
+    expect(preferred.data.some(job => job.title === "부산 강서")).toBe(true);
+  });
   afterAll(async () => {
     await fixture?.dispose();
   });
