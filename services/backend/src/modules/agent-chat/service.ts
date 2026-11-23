@@ -26,6 +26,7 @@ import { readableCareerProperties, type CareerApi } from "../career/index.js";
 import type { GoalDemandApi, JobBoardApi } from "../jobs/index.js";
 import { goalFamily } from "../jobs/demand.js";
 import type { ActivityApi } from "../activities/index.js";
+import { interviewFocus } from "./interview-focus.js";
 import { retrySearch } from "./search-retry.js";
 import { mergeSearch, searchConditions, roleTerms } from "./search-state.js";
 import { activityItem, activityMatches, jobItem } from "./finds.js";
@@ -837,12 +838,13 @@ export class AgentChatService {
   private async interviewState(userId: string, brewId: string): Promise<AgentBrewInterviewState | null> {
     const { bases, session } = await this.brews!.interview(userId, brewId);
     const indexOf = new Map(bases.map(({ basis }, index) => [interviewBasisKey(basis), index]));
-    return {
-      bases: bases.map(({ basis, label }, index) => ({ index, kind: basis.type === "requirement" ? "requirement" : "record", coverage: basis.type === "requirement" ? basis.coverage : null, label: label.slice(0, 300), evidence: basis.evidence.slice(0, 300) })),
-      saved: (session?.questions ?? []).filter(question => question.answered).map(question => ({ basis: indexOf.get(interviewBasisKey(question.basis)) ?? null, question: question.text })),
-      limit: INTERVIEW_QUESTION_LIMIT,
-    };
+    const grounded = bases.map(({ basis, label }, index) => ({ index, kind: (basis.type === "requirement" ? "requirement" : "record") as "requirement" | "record", coverage: basis.type === "requirement" ? basis.coverage : null, label: label.slice(0, 300), evidence: basis.evidence.slice(0, 300) }));
+    const saved = (session?.questions ?? []).filter(question => question.answered).map(question => ({ basis: indexOf.get(interviewBasisKey(question.basis)) ?? null, question: question.text }));
+    const selected = await this.brews!.selectedRecords(userId, brewId);
+    const records = selected.length ? (await this.readRecords(userId, selected.slice(0, 3).map(record => record.id))).map(record => ({ ...record, text: record.text.slice(0, 2_000), truncated: record.truncated || record.text.length > 2_000 })) : [];
+    return { bases: grounded, saved, records, focus: interviewFocus(grounded, saved), limit: INTERVIEW_QUESTION_LIMIT };
   }
+
   /**
    * 인터뷰 답 저장 도구. 답의 글은 모델이 쓰지 않는다 — 가리킨 사용자 메시지와 같은 근거로 앞서 저장한 메시지를 대화 순서로 잇는다.
    * 답 저장이 기록 본문을 덮어쓰므로 꼬리 답이 오면 앞의 답까지 함께 보낸다. 멱등 키는 근거와 메시지 묶음에서 만든다(다시 보내기에도 한 번).

@@ -22,6 +22,8 @@ export interface AgentBrewDesignState { ready: boolean; busy: boolean; styles: s
  * `kind` requirement는 공고가 요구하는데 기록으로 확인되지 않은 요건(`coverage` missing · partial), record는 수치가 빠진 고른 기록이다.
  */
 export interface AgentBrewInterviewState {
+  records?: AgentRecordText[];
+  focus?: { basis: number; topic: string; askFor: string } | null;
   bases: { index: number; kind: "requirement" | "record"; coverage: "missing" | "partial" | null; label: string; evidence: string }[];
   /** 답을 저장한 질문. `basis`는 그 질문의 근거 index이고, 근거 목록에서 빠졌으면 null이다. */
   saved: { basis: number | null; question: string }[];
@@ -227,7 +229,7 @@ export interface AgentRuntime { run(input: AgentInput): Promise<void> }
 /** 에이전트가 부를 수 있는 도구. SDK에 넘기는 허용 목록과 실행 직전 검사가 이 목록 하나를 본다. */
 const USABILITY_PROMPT = [
   "검색은 searchState의 이전 조건을 유지합니다. 여러 직무와 장소는 families와 locations 배열로 한 번에 search_jobs를 호출하십시오. 추가 허용한 지역·직무에는 이전 조건도 포함하십시오. '가능하면'은 locationMode prefer, '근처'는 nearby, '그 지역만'은 strict입니다. 조건을 마음대로 삭제하거나 국내 검색을 해외로 넓히지 마십시오. 서버가 적용한 conditions와 matchNote로 결과를 설명하십시오. 경력 정보가 없으면 지원 가능하다고 단정하지 마십시오. 결과가 0건인 것과 실행 실패를 구분하고 이미 답한 조건을 다시 묻지 마십시오.",
-  "인터뷰 질문은 한 번에 확인할 항목 하나만 묻습니다. 규모·사용자 수·지연 시간을 한 질문에 함께 묻지 마십시오. 기록에서 실시간 서빙이 확인되지 않았으면 처리 방식부터 묻습니다. 예시를 붙여 여러 질문으로 늘리지 마십시오. '사용자가 방금', 'event가', '도구를 호출' 같은 내부 진행 설명은 본문에 쓰지 마십시오.",
+  "인터뷰 질문은 interview.focus에 정한 근거 하나에서 확인할 항목 하나만 묻습니다. interview.records는 서버가 직접 조회한 선택 기록의 사실입니다. 공고의 요구사항을 사용자의 경험으로 간주하지 마십시오. 규모·사용자 수·지연 시간을 한 질문에 함께 묻지 마십시오. 기록에서 실시간 서빙이 확인되지 않았으면 처리 방식부터 묻습니다. 예시를 붙여 여러 질문으로 늘리지 마십시오. '사용자가 방금', 'event가', '도구를 호출' 같은 내부 진행 설명은 본문에 쓰지 마십시오.",
   "기존 프로젝트를 보강하는 답은 save_interview_answer의 recordId에 해당 materials의 id를 넣어 원본 프로젝트에 반영하십시오. 새 경험만 recordId 없이 저장하십시오. 도구 결과의 record.state가 applied면 기존 기록 반영, saved면 별도 기록 저장입니다. 저장 성공 전에 반영됐다고 말하지 마십시오. 같은 답을 append_to_record로 다시 붙이지 마십시오. 사용자가 '반영하고 디자인으로 넘어가자'고 하면 저장을 기다린 다음 begin_design을 순서대로 호출하십시오.",
 ].join("\n");
 
