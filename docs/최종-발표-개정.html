@@ -1446,6 +1446,17 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-sys .ai .t.brand { font-family: var(--ex-font-brand); font-weight: 500; }
 .fd-sys .ai small { margin-top: 8px; font-size: 21px; color: var(--ex-slate-500); letter-spacing: -.02em; white-space: nowrap; }
 
+/* 추천 모델 학습과 성능 — 위는 제안서 「루브릭 기반 교사 지식 증류」의 네 단계 그림, 아래는 측정 전이라 빗금으로 비워 둔 NDCG@10 */
+.fd-ndcg2 { margin-top: 22px; padding-top: 24px; border-top: 1px solid var(--ex-line-200); display: grid; grid-template-columns: 270px repeat(4, 1fr); gap: 34px; align-items: start; flex: none; }
+.fd-ndcg2 .h b { display: block; font-size: 36px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; }
+.fd-ndcg2 .h span { display: block; margin-top: 8px; font-size: 21px; color: var(--ex-slate-500); letter-spacing: -.02em; }
+.fd-ndcg2 .n { font-size: 25px; font-weight: 600; letter-spacing: -.03em; white-space: nowrap; }
+.fd-ndcg2 .n small { margin-left: 10px; font-size: 18px; font-weight: 500; color: var(--ex-slate-500); }
+.fd-ndcg2 .m.own .n small { color: #8A5A12; }
+.fd-ndcg2 .track { margin-top: 14px; height: 22px; border-radius: 11px; background: repeating-linear-gradient(135deg, var(--ex-tint-100) 0 10px, var(--ex-surface-50) 10px 20px); }
+.fd-ndcg2 .m.own .track { background: repeating-linear-gradient(135deg, var(--fp-own) 0 10px, var(--ex-surface-50) 10px 20px); }
+.fd-ndcg2 .ax { margin-top: 8px; display: flex; justify-content: space-between; font-size: 17px; color: var(--ex-slate-400); font-variant-numeric: tabular-nums; }
+
 /* 13쪽 · 설계서 열 단계 */
 .vh-v10:has(.fd-steps) { grid-template-columns: 400px 1fr; }
 .fd-steps { display: flex; flex-direction: column; min-height: 0; }
@@ -1762,47 +1773,13 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">교사 LLM 판정으로 학습한 두 모델의 순위 품질</p>
     </div>
     <div class="body">
-      <div class="fp-cols" style="grid-template-columns: .92fr 1.08fr">
-        <div class="in dl-3" style="padding-right: 48px">
-          <div class="k" style="margin-bottom: 20px; height: 40px; display: flex; align-items: center">학습</div>
-          <div class="fp-chain">
-            <div class="node fp-field src"><b>프로필 · 공고 쌍</b><span>합성 프로필 + 채용 공고</span></div>
-            <div class="down"><i class="ph ph-arrow-down"></i></div>
-            <div class="node fp-field ext"><b>교사 LLM 판정</b><span>요구사항별 충족 수준 · 근거 기록</span></div>
-            <div class="down"><i class="ph ph-arrow-down"></i></div>
-            <div class="node fp-field out"><b>적합도 라벨</b><span>코드의 가중 점수 계산 · 0–100</span></div>
-            <div class="down"><i class="ph ph-arrow-down"></i></div>
-            <div class="node fp-field own"><b>추천 모델 학습</b><span>Bi-Encoder+MLP · Cross-Encoder</span></div>
-          </div>
-        </div>
-        <div class="in in-fade dl-4 fd-ndcg" style="padding-left: 48px">
-          <div class="k" style="margin-bottom: 20px; height: 40px; display: flex; align-items: center">NDCG@10 · 한국어 채용 공고 평가 세트</div>
-          <svg viewBox="0 0 1128 677" aria-hidden="true">
-            <defs>
-              <pattern id="fpp-hatch" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <rect width="24" height="24" style="fill: var(--ex-surface-50)"/><rect width="12" height="24" style="fill: var(--ex-tint-50)"/>
-              </pattern>
-            </defs>
-            <g style="stroke: var(--ex-line-200); stroke-width: 1.5">
-              <path d="M90 40 H1128"/><path d="M90 170 H1128"/><path d="M90 300 H1128"/><path d="M90 430 H1128"/>
-            </g>
-            <path d="M90 560 H1128" style="stroke: var(--ex-ink-900); stroke-width: 2.5"/>
-            <g style="font-family: var(--ex-font-brand); font-weight: 300; font-size: 28px; fill: var(--ex-slate-500)" text-anchor="end">
-              <text x="70" y="50">1.0</text><text x="70" y="180">0.75</text><text x="70" y="310">0.5</text><text x="70" y="440">0.25</text><text x="70" y="570">0</text>
-            </g>
-            <g style="fill: url(#fpp-hatch); stroke: var(--ex-slate-300); stroke-width: 1.5; stroke-dasharray: 8 8">
-              <rect x="150" y="40" width="170" height="520" rx="10"/><rect x="400" y="40" width="170" height="520" rx="10"/>
-              <rect x="650" y="40" width="170" height="520" rx="10"/><rect x="900" y="40" width="170" height="520" rx="10"/>
-            </g>
-            
-            <g text-anchor="middle" class="s-t" style="font-size: 27px">
-              <text x="235" y="612">규칙 기반 점수</text><text x="485" y="612">Char TF-IDF</text><text x="735" y="612">Bi-Encoder+MLP</text><text x="985" y="612">Cross-Encoder</text>
-            </g>
-            <path d="M150 632 H570" style="stroke: var(--ex-slate-300); stroke-width: 2"/><path d="M650 632 H1070" style="stroke: var(--fp-own-line); stroke-width: 3"/>
-            <rect x="310" y="620" width="100" height="24" style="fill: var(--ex-surface-50)"/><rect x="800" y="620" width="120" height="24" style="fill: var(--ex-surface-50)"/>
-            <g text-anchor="middle" class="s-p" style="font-size: 23px"><text x="360" y="640">기준선</text><text x="860" y="640">학습 모델</text></g>
-          </svg>
-        </div>
+      <svg class="fd-rubric in in-fade dl-3" viewBox="0 0 1664 462" style="width: 1712px; height: 475px; flex: none; max-width: none; max-height: none" role="img" aria-label="채용 공고와 합성 프로필을 교사 LLM이 판정하고, 고정된 루브릭으로 점수를 매겨 추천 모델을 학습시키는 과정"><defs><marker id="teacher-method-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 2L8 5L2 8" fill="none" stroke="#8596AF" stroke-width="1.5"></path></marker></defs><text x="0" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">01　입력</text><text x="380" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">02　교사 판정</text><text x="810" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">03　루브릭 점수화</text><text x="1400" y="25" style="font-family:var(--ex-font-ui);font-size:20px;fill:#9A4030;font-weight:600">04　지식 증류</text><rect x="0" y="112" width="280" height="114" rx="14" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text x="22" y="152" style="font-family:var(--ex-font-ui);font-size:27px;fill:#25354B;font-weight:600">채용 공고</text><text x="22" y="193" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">필수 · 업무 · 우대요건</text><rect x="0" y="276" width="280" height="114" rx="14" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text x="22" y="316" style="font-family:var(--ex-font-ui);font-size:27px;fill:#25354B;font-weight:600">합성 프로필</text><text x="22" y="357" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">경력 기록 · 수행 근거</text><path d="M292 170H330V224H367" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><path d="M292 334H330V272H367" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><rect x="380" y="119" width="345" height="260" rx="14" style="fill:#FFF0E1;stroke:#E7CEB0;stroke-width:1.6"></rect><text x="402" y="160" style="font-family:var(--ex-font-ui);font-size:28px;fill:#25354B;font-weight:600">교사 LLM</text><text x="402" y="192" style="font-family:var(--ex-font-ui);font-size:19px;fill:#9A623B;font-weight:400">프론티어 LLM</text><text x="402" y="248" style="font-family:var(--ex-font-ui);font-size:24px;fill:#25354B;font-weight:600">요구사항 ↔ 근거 기록</text><text x="402" y="292" style="font-family:var(--ex-font-ui);font-size:22px;fill:#53657D;font-weight:400">기록 ID를 연결하고</text><text x="402" y="325" style="font-family:var(--ex-font-ui);font-size:22px;fill:#53657D;font-weight:400">충족 수준을 판정</text><path d="M737 248H797" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><rect x="810" y="56" width="515" height="365" rx="14" style="fill:#FFFFFF;stroke:#D9E3EF;stroke-width:1.6"></rect><text x="833" y="97" style="font-family:var(--ex-font-ui);font-size:27px;fill:#25354B;font-weight:600">고정된 평가 기준</text><rect x="833" y="120" width="140" height="76" rx="14" style="fill:#F8F3ED;stroke:#EEE1D2;stroke-width:1.6"></rect><text x="847" y="148" style="font-family:var(--ex-font-ui);font-size:18px;fill:#53657D;font-weight:400">필수요건</text><text x="847" y="181" style="font-family:var(--ex-font-ui);font-size:27px;fill:#9A623B;font-weight:600">45%</text><rect x="990" y="120" width="140" height="76" rx="14" style="fill:#F8F3ED;stroke:#EEE1D2;stroke-width:1.6"></rect><text x="1004" y="148" style="font-family:var(--ex-font-ui);font-size:18px;fill:#53657D;font-weight:400">담당업무</text><text x="1004" y="181" style="font-family:var(--ex-font-ui);font-size:27px;fill:#9A623B;font-weight:600">40%</text><rect x="1147" y="120" width="155" height="76" rx="14" style="fill:#F8F3ED;stroke:#EEE1D2;stroke-width:1.6"></rect><text x="1161" y="148" style="font-family:var(--ex-font-ui);font-size:18px;fill:#53657D;font-weight:400">우대요건</text><text x="1161" y="181" style="font-family:var(--ex-font-ui);font-size:27px;fill:#9A623B;font-weight:600">15%</text><text x="833" y="233" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">강한 직접 근거</text><text x="1242" y="233" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">100</text><text x="833" y="268" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">직접 근거</text><text x="1242" y="268" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">75</text><text x="833" y="303" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">부분 충족</text><text x="1242" y="303" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">50</text><text x="833" y="338" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">전이 가능한 인접 경험</text><text x="1242" y="338" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">25</text><text x="833" y="373" style="font-family:var(--ex-font-ui);font-size:21px;fill:#53657D;font-weight:400">근거 없음</text><text x="1242" y="373" style="font-family:var(--ex-font-ui);font-size:23px;fill:#9A623B;font-weight:600">0</text><text x="810" y="452" style="font-family:var(--ex-font-ui);font-size:17px;fill:#53657D;font-weight:400">해당 없는 축은 제외 후 가중치 재정규화</text><path d="M1337 248H1387" style="fill:none;stroke:#8596AF;stroke-width:2" marker-end="url(#teacher-method-arrow)"></path><rect x="1400" y="119" width="264" height="260" rx="14" style="fill:#ECF5F1;stroke:#CCE2D7;stroke-width:1.6"></rect><text x="1422" y="164" style="font-family:var(--ex-font-ui);font-size:26px;fill:#25354B;font-weight:600">적합도 라벨</text><text x="1422" y="222" style="font-family:var(--ex-font-ui);font-size:40px;fill:#478670;font-weight:400">0–100</text><text x="1422" y="265" style="font-family:var(--ex-font-ui);font-size:23px;fill:#25354B;font-weight:600">추천 모델 학습</text><text x="1422" y="310" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">Bi-Encoder+MLP</text><text x="1422" y="343" style="font-family:var(--ex-font-ui);font-size:20px;fill:#53657D;font-weight:400">Cross-Encoder</text><text x="380" y="429" style="font-family:var(--ex-font-ui);font-size:19px;fill:#9A623B;font-weight:400">교사: 근거 해석과 판정</text><text x="380" y="455" style="font-family:var(--ex-font-ui);font-size:19px;fill:#9A623B;font-weight:400">코드: 가중 점수 계산과 오류 검사</text></svg>
+      <div class="fd-ndcg2 in dl-5">
+        <div class="h"><b>NDCG@10</b><span>한국어 채용 공고 평가 세트</span></div>
+        <div class="m"><div class="n">규칙 기반 점수<small>기준선</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
+        <div class="m"><div class="n">Char TF-IDF<small>기준선</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
+        <div class="m own"><div class="n">Bi-Encoder+MLP<small>학습 모델</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
+        <div class="m own"><div class="n">Cross-Encoder<small>학습 모델</small></div><div class="track"></div><div class="ax"><span>0</span><span>0.5</span><span>1.0</span></div></div>
       </div>
     </div>
   </div>
