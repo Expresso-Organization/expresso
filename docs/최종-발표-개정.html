@@ -1402,7 +1402,7 @@ svg [data-morph] { transform-box: fill-box; }
 /* 연출이 붙은 전환에서는 차례로 올라오는 등장을 끄고 한 번에 밝아지게 합니다 */
 .deck-stage.calm > .slide.active .in { animation: none !important; opacity: 1; transform: none; }
 /* Lessons & Learned 1단계 — 일반적 방식만 가운데에, Expresso 쪽은 2단계에서 나타납니다 */
-.slide[data-lstep="1"] .fv > .fv-p:first-child { translate: 444px 0; }
+.slide[data-lstep="1"] .fv > .fv-p:first-child { translate: 492px 0; }
 .slide[data-lstep="1"] .fv-mid, .slide[data-lstep="1"] .fv-p.on { visibility: hidden; }
 .slide[data-lstep="2"] .fv > .fv-p:first-child { opacity: .62; }
 
@@ -1643,34 +1643,43 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-goal .way.off { stroke: #8596AF; stroke-dasharray: 8 7; }
 .fd-goal .way.on { stroke: #9A4030; }
 
-/* Lessons & Learned · 수직적 협력과 수평적 협력 대비 */
-.fv { display: grid; grid-template-columns: 1fr 64px 1fr; width: 1712px; flex: none; align-items: stretch; }
-.fv-p { display: flex; flex-direction: column; }
-.fv-k { font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; color: var(--ex-slate-500); }
-.fv-h { font-family: var(--ex-font-ui); font-size: 36px; font-weight: 600; letter-spacing: -.03em; color: var(--ex-ink-900); margin: 4px 0 22px; }
+/* Lessons & Learned · 수직적 협력과 수평적 협력 — 흰 카드 · 얇은 테두리 · 그림자, 색은 Expresso 쪽 선 아이콘과 강조에만 */
+.fv { display: grid; grid-template-columns: 1fr 72px 1.25fr; width: 1712px; flex: 1 1 auto; min-height: 0; align-items: stretch; }
+.fv-p { display: flex; flex-direction: column; min-height: 0; padding: 26px 30px 24px; border-radius: 22px; background: var(--ex-white); border: 1px solid var(--ex-line-200); box-shadow: 0 10px 30px rgba(22, 34, 58, .06); }
+.fv-p.on { border-color: #E6C9BC; box-shadow: 0 14px 36px rgba(154, 64, 48, .10); }
+.fv-top { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+.fv-top .ic { flex: none; width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; font-size: 28px; background: var(--ex-tint-50); color: var(--ex-slate-500); }
+.fv-p.on .fv-top .ic { background: #FBEEE4; color: #9A4030; }
+.fv-k { font-family: var(--ex-font-ui); font-size: 19px; font-weight: 600; color: var(--ex-slate-500); }
 .fv-p.on .fv-k { color: #9A4030; }
-.fv-mid { display: grid; place-items: center; font-size: 44px; color: #9A4030; }
-.fv-dg { height: 372px; display: flex; flex-direction: column; }
-.fv-band { flex: 1 1 0; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; border-radius: 16px; background: var(--ex-tint-50); border: 1.5px solid var(--ex-line-200); }
-.fv-band .r { display: flex; align-items: center; gap: 10px; font-family: var(--ex-font-ui); font-size: 25px; font-weight: 600; letter-spacing: -.02em; color: var(--ex-ink-900); }
-.fv-band .r i { font-size: 28px; color: var(--ex-slate-500); }
-.fv-band .l { font-family: var(--ex-font-ui); font-size: 22px; color: var(--ex-slate-500); }
-.fv-hand { height: 54px; flex: none; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--ex-font-ui); font-size: 20px; font-weight: 500; color: var(--ex-slate-500); }
-.fv-hand i { font-size: 28px; color: var(--ex-slate-400); }
-.fv-cols { flex: 1 1 auto; display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 12px; }
-.fv-col { display: flex; flex-direction: column; border-radius: 16px; background: #FBEEE4; border: 1.6px solid #C48A7D; padding: 16px 10px 12px; }
-.fv-col .who { display: flex; justify-content: center; gap: 8px; font-size: 28px; color: #9A4030; }
-.fv-col .who i + i { color: var(--ex-slate-500); }
-.fv-col .d { flex: 1 1 auto; display: grid; place-items: center; text-align: center; font-family: var(--ex-font-ui); font-size: 22px; font-weight: 600; letter-spacing: -.03em; line-height: 1.3; color: var(--ex-ink-900); word-break: keep-all; padding: 6px 0; }
-.fv-col .ly { display: grid; row-gap: 5px; }
-.fv-col .ly span { display: block; text-align: center; border-radius: 8px; background: var(--ex-white); font-family: var(--ex-font-ui); font-size: 17px; color: var(--ex-slate-500); padding: 3px 0; }
-.fv-link { height: 54px; flex: none; display: flex; align-items: center; gap: 12px; font-family: var(--ex-font-ui); font-size: 20px; font-weight: 500; color: #9A4030; }
-.fv-link::before, .fv-link::after { content: ''; flex: 1 1 auto; border-top: 2px solid #C48A7D; }
-.fv-link i { font-size: 26px; }
-.fv-ul { list-style: none; margin: 26px 0 0; padding: 22px 0 0; border-top: 1.6px solid var(--ex-line-200); display: grid; row-gap: 12px; }
-.fv-ul li { font-family: var(--ex-font-ui); font-size: 25px; letter-spacing: -.02em; color: var(--ex-slate-700); display: flex; align-items: center; gap: 14px; }
-.fv-ul li::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--ex-slate-300); flex: none; }
-.fv-p.on .fv-ul li { color: var(--ex-ink-900); font-weight: 500; }
+.fv-h { font-family: var(--ex-font-ui); font-size: 32px; font-weight: 700; letter-spacing: -.03em; color: var(--ex-ink-900); }
+.fv-dg { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.fv-band { flex: 1 1 0; min-height: 0; display: flex; align-items: center; gap: 16px; padding: 0 20px; border-radius: 16px; background: var(--ex-tint-50); border: 1px solid var(--ex-line-200); }
+.fv-band .lic { flex: none; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; font-size: 24px; color: var(--ex-slate-500); background: var(--ex-white); border: 1px solid var(--ex-line-200); }
+.fv-band .l { font-family: var(--ex-font-ui); font-size: 26px; font-weight: 700; letter-spacing: -.02em; color: var(--ex-ink-900); }
+.fv-band .r { margin-left: auto; display: flex; align-items: center; gap: 8px; padding: 6px 16px 6px 12px; border-radius: 999px; background: var(--ex-white); border: 1px solid var(--ex-line-200); font-family: var(--ex-font-ui); font-size: 21px; font-weight: 500; color: var(--ex-slate-700); }
+.fv-band .r i { font-size: 20px; color: var(--ex-slate-500); }
+.fv-hand { height: 56px; flex: none; display: flex; align-items: center; gap: 10px; padding-left: 30px; font-family: var(--ex-font-ui); font-size: 19px; font-weight: 500; color: var(--ex-slate-500); }
+.fv-hand i { font-size: 22px; color: var(--ex-slate-400); }
+.fv-mid { display: grid; place-items: center; }
+.fv-mid i { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 26px; color: var(--ex-white); background: #9A4030; box-shadow: 0 8px 20px rgba(154, 64, 48, .25); }
+.fv-cols { flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 12px; }
+.fv-col { display: flex; flex-direction: column; gap: 12px; padding: 16px 12px 14px; border-radius: 16px; background: var(--ex-white); border: 1px solid var(--ex-line-200); }
+.fv-col .d { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 92px; font-family: var(--ex-font-ui); font-size: 21px; font-weight: 700; letter-spacing: -.03em; line-height: 1.25; color: var(--ex-ink-900); word-break: keep-all; }
+.fv-col .d i { font-size: 28px; color: #9A4030; }
+.fv-col .who { display: flex; flex-wrap: wrap; gap: 6px; }
+.fv-col .who span { display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: var(--ex-tint-50); font-family: var(--ex-font-ui); font-size: 15px; font-weight: 500; color: var(--ex-slate-500); }
+.fv-col .who i { font-size: 17px; }
+.fv-col .who span + span i { color: #9A4030; }
+.fv-col .ly { margin-top: auto; display: grid; row-gap: 6px; padding-left: 10px; border-left: 3px solid #C48A7D; }
+.fv-col .ly span { display: block; padding: 5px 10px; border-radius: 8px; background: var(--ex-tint-50); font-family: var(--ex-font-ui); font-size: 17px; font-weight: 500; color: var(--ex-slate-700); }
+.fv-link { height: 56px; flex: none; display: flex; align-items: center; gap: 12px; font-family: var(--ex-font-ui); font-size: 19px; font-weight: 600; color: #9A4030; }
+.fv-link::before, .fv-link::after { content: ''; flex: 1 1 auto; border-top: 2px dashed #D9A796; }
+.fv-link i { font-size: 24px; }
+.fv-ul { list-style: none; margin: 18px 0 0; padding: 16px 0 0; border-top: 1px solid var(--ex-line-200); display: grid; row-gap: 8px; }
+.fv-ul li { display: flex; align-items: center; gap: 12px; font-family: var(--ex-font-ui); font-size: 22px; letter-spacing: -.02em; color: var(--ex-slate-700); }
+.fv-ul li::before { content: ''; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ex-slate-300); }
+.fv-p.on .fv-ul li { color: var(--ex-ink-900); font-weight: 600; }
 .fv-p.on .fv-ul li::before { background: #C48A7D; }
 
 /* 13쪽 · 설계서 열 단계 */
@@ -2656,14 +2665,14 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="body">
       <div class="fv" role="img" aria-label="왼쪽 수직적 협력(일반적 방식): 프론트엔드 · 백엔드 · AI · 데이터 담당이 화면 · 서버 · 모델 계층을 나눠 맡고, 기능 하나가 계층 사이 인계와 대기를 거침. 오른쪽 수평적 협력(Expresso): 커리어 기록 · 채용 공고 · 채용 공고 분석과 AI 인터뷰 · 생성 · 배포와 추천 모델 · AI 대화와 방문 분석 도메인마다 사람 한 명과 에이전트가 화면 · 서버 · AI 전 계층을 개발하고, 팀원끼리 공유 API 스키마와 상호 검토로 협력">
         <div class="fv-p in dl-3">
-          <div class="fv-k">일반적 방식</div><div class="fv-h">수직적 협력</div>
-          <div class="fv-dg"><div class="fv-band"><span class="r"><i class="ph ph-user"></i>프론트엔드 담당</span><span class="l">화면</span></div><div class="fv-hand"><i class="ph ph-arrow-down"></i>인계 · 대기</div><div class="fv-band"><span class="r"><i class="ph ph-user"></i>백엔드 담당</span><span class="l">서버 · API</span></div><div class="fv-hand"><i class="ph ph-arrow-down"></i>인계 · 대기</div><div class="fv-band"><span class="r"><i class="ph ph-user"></i>AI · 데이터 담당</span><span class="l">모델 · 데이터</span></div></div>
+          <div class="fv-top"><span class="ic"><i class="ph ph-stack"></i></span><div><div class="fv-k">일반적 방식</div><div class="fv-h">수직적 협력</div></div></div>
+          <div class="fv-dg"><div class="fv-band"><span class="lic"><i class="ph ph-browser"></i></span><span class="l">화면</span><span class="r"><i class="ph ph-user"></i>프론트엔드 담당</span></div><div class="fv-hand"><i class="ph ph-hourglass-medium"></i>인계 · 대기</div><div class="fv-band"><span class="lic"><i class="ph ph-hard-drives"></i></span><span class="l">서버 · API</span><span class="r"><i class="ph ph-user"></i>백엔드 담당</span></div><div class="fv-hand"><i class="ph ph-hourglass-medium"></i>인계 · 대기</div><div class="fv-band"><span class="lic"><i class="ph ph-brain"></i></span><span class="l">모델 · 데이터</span><span class="r"><i class="ph ph-user"></i>AI · 데이터 담당</span></div></div>
           <ul class="fv-ul"><li>직군별 분담</li><li>계층 사이 인계 · 대기</li><li>기능 하나에 여러 담당자 의존</li></ul>
         </div>
         <div class="fv-mid in in-fade dl-4"><i class="ph ph-arrow-right"></i></div>
         <div class="fv-p on in dl-5">
-          <div class="fv-k">Expresso</div><div class="fv-h">수평적 협력</div>
-          <div class="fv-dg"><div class="fv-cols"><div class="fv-col"><div class="who"><i class="ph ph-user"></i><i class="ph ph-robot"></i></div><div class="d">커리어 기록</div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="who"><i class="ph ph-user"></i><i class="ph ph-robot"></i></div><div class="d">채용 공고</div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="who"><i class="ph ph-user"></i><i class="ph ph-robot"></i></div><div class="d">채용 공고 분석 · AI&nbsp;인터뷰</div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="who"><i class="ph ph-user"></i><i class="ph ph-robot"></i></div><div class="d">생성 · 배포 · 추천 모델</div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="who"><i class="ph ph-user"></i><i class="ph ph-robot"></i></div><div class="d">AI 대화 ·<br>방문 분석</div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div></div><div class="fv-link"><i class="ph ph-arrows-left-right"></i>공유 API 스키마 · 서로의 도메인 검토<i class="ph ph-arrows-left-right"></i></div></div>
+          <div class="fv-top"><span class="ic"><i class="ph ph-columns"></i></span><div><div class="fv-k">Expresso</div><div class="fv-h">수평적 협력</div></div></div>
+          <div class="fv-dg"><div class="fv-cols"><div class="fv-col"><div class="d"><i class="ph ph-notebook"></i>커리어 기록</div><div class="who"><span><i class="ph ph-user"></i>사람</span><span><i class="ph ph-robot"></i>에이전트</span></div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="d"><i class="ph ph-magnifying-glass"></i>채용 공고</div><div class="who"><span><i class="ph ph-user"></i>사람</span><span><i class="ph ph-robot"></i>에이전트</span></div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="d"><i class="ph ph-chats-circle"></i>채용 공고 분석 · AI&nbsp;인터뷰</div><div class="who"><span><i class="ph ph-user"></i>사람</span><span><i class="ph ph-robot"></i>에이전트</span></div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="d"><i class="ph ph-rocket-launch"></i>생성 · 배포 · 추천 모델</div><div class="who"><span><i class="ph ph-user"></i>사람</span><span><i class="ph ph-robot"></i>에이전트</span></div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div><div class="fv-col"><div class="d"><i class="ph ph-chart-line-up"></i>AI 대화 · 방문 분석</div><div class="who"><span><i class="ph ph-user"></i>사람</span><span><i class="ph ph-robot"></i>에이전트</span></div><div class="ly"><span>화면</span><span>서버</span><span>AI</span></div></div></div><div class="fv-link"><i class="ph ph-arrows-left-right"></i>공유 API 스키마 · 서로의 도메인 검토<i class="ph ph-arrows-left-right"></i></div></div>
           <ul class="fv-ul"><li>도메인별 분담</li><li>사람 한 명과 에이전트의 전 계층 개발</li><li>팀원 사이 대등한 검토</li></ul>
         </div>
       </div>
@@ -3860,7 +3869,7 @@ window.deck = new Deck();
      기둥 아래 상호 검토 줄이 가로로 그어집니다. 이전을 누르면 1단계로 돌아갑니다. */
   const LESSON = 'Lessons & Learned';
   const isLesson = (s) => s && s.dataset.title === LESSON;
-  const SHIFT = '444px 0';
+  const SHIFT = '492px 0';
   function lessonStep1(s) {
     s.dataset.lstep = '1';
     if (still.matches) return;
