@@ -20,7 +20,8 @@ date: 2026-11-23
 | `services/backend/src/modules/consultant/portfolio-suggestion.ts` (새로) · `.test.ts` (새로) | 문턱 상수와 판단 함수, 단위 테스트 |
 | `services/backend/src/modules/consultant/service.ts` · `index.ts` · `service.integration.test.ts` | 제안일 읽기 · 쓰기와 진입점 |
 | `services/backend/src/platform/agent/runtime.ts` · `runtime.test.ts` | `suggest_portfolio` 도구, `memory.portfolio`, `save_record` 응답, 지침 |
-| `services/backend/src/modules/agent-chat/service.ts` · `service.integration.test.ts` | 판단에 넘길 값 읽기, 도구 처리, 기억에 싣기 |
+| `services/backend/src/modules/agent-chat/service.ts` · `brew-start.ts` · `service.integration.test.ts` | 판단에 넘길 값 읽기, 도구 처리, 기억에 싣기, 끝나지 않은 제작 수(`openBrews`) |
+| `services/backend/src/api/main.ts` | `openBrews`를 홈 읽기 모델(`EngagementApi.home`)에 잇기 |
 | `services/web/src/features/agent-chat/tool-parts.tsx` · `tool-parts.test.tsx` | 「포트폴리오 제안」을 선택지 부품으로 그리기 |
 
 구현 중 이 표에서 벗어나면 같은 커밋에서 이 파일을 고친다.

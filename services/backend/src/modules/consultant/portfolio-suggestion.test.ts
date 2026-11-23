@@ -21,7 +21,7 @@ describe("포트폴리오 제안의 시점 판단", () => {
     expect(portfolioSuggestion({ ...base, records: 20, portfolios: 1 })).toBe("has_portfolio");
   });
 
-  it("이 대화에서 제작을 시작했으면 권하지 않는다", () => {
+  it("끝나지 않은 제작이 있으면 권하지 않는다", () => {
     expect(portfolioSuggestion({ ...base, brewing: 1 })).toBe("in_progress");
   });
 

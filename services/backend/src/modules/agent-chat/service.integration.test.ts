@@ -678,9 +678,33 @@ describe.skipIf(!(process.env.TEST_MONGODB_ADMIN_URL ?? process.env.TEST_MONGODB
       await input.emit({ type: "tool", tool: { id: randomUUID(), name: "포트폴리오 제작", status: "complete", summary: "사이드 프로젝트 모음", brewStart: { startId: randomUUID(), jobPostingId: null, jobAnalysisId: randomUUID(), title: "사이드 프로젝트 모음", companyName: "", lengthPreset: "single", brewId: null } } });
       refusal = await input.suggestPortfolio().catch(error => error);
     });
-    expect((refusal as AgentToolRejection).issues[0]).toContain("이미 포트폴리오 제작을 시작했습니다");
+    expect((refusal as AgentToolRejection).issues[0]).toContain("이미 만드는 중인 포트폴리오 제작이 있습니다");
     await say(brewing.id, "지금 뭐 하면 돼?", async input => { memory = input.memory; });
     expect(memory?.portfolio).toEqual({ records: 3, suggest: false });
+
+    // 다른 대화에서 시작해 끝나지 않은 제작이 있어도 권하지 않는다. 그 수를 읽지 못하면 제안 도구는 답변을 실패시키지 않고 돌려보낸다.
+    let open: () => Promise<number> = async () => 1;
+    const withBrews = new AgentChatService(fixture.resource, { run: input => step(input) }, career, { get: async () => { throw new Error("없는 공고"); } }, documents, consent, new AgentCredentials(fixture.resource), new PortfolioReadService(fixture.resource), new PageService(fixture.resource), undefined, consultant, undefined, undefined, undefined, { openBrews: () => open() } as never);
+    services.push(withBrews);
+    const elsewhere = await withBrews.create(writer, []);
+    const ask = async (text: string, work: (input: Input) => Promise<void>) => {
+      step = work;
+      await withBrews.send(writer, elsewhere.id, { requestId: randomUUID(), text });
+      await expect.poll(async () => (await withBrews.get(writer, elsewhere.id)).run?.status).not.toBe("running");
+      return withBrews.get(writer, elsewhere.id);
+    };
+    await ask("요즘 뭐 하면 좋을까요?", async input => { memory = input.memory; refusal = await input.suggestPortfolio().catch(error => error); });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: false });
+    expect((refusal as AgentToolRejection).issues[0]).toContain("이미 만드는 중인 포트폴리오 제작이 있습니다");
+    open = async () => { throw new Error("mongo down"); };
+    const unreadable = await ask("그럼 다음엔요?", async input => { memory = input.memory; refusal = await input.suggestPortfolio().catch(error => error); });
+    expect(unreadable.run?.status).toBe("complete");
+    expect(memory?.portfolio).toBeNull();
+    expect(refusal).toBeInstanceOf(AgentToolRejection);
+    expect((refusal as AgentToolRejection).issues[0]).toContain("확인할 수 없습니다");
+    open = async () => 0;
+    await ask("이제는요?", async input => { memory = input.memory; });
+    expect(memory?.portfolio).toEqual({ records: 3, suggest: true });
 
     // 포트폴리오가 생기면 더 권하지 않는다.
     const db = mongoCollections(fixture.resource.db); const now = new Date();

@@ -11,7 +11,7 @@ date: 2026-11-23
 
 ## 요구사항
 
-- [ ] `portfolioSuggestion()`(순수 함수)이 다섯 상태 가운데 하나를 낸다: `due` · `few_records` · `has_portfolio` · `in_progress` · `recently_suggested`. `due`는 포트폴리오 0건, 이 대화의 제작 0건, 내용이 있는 기록 `PORTFOLIO_SUGGESTION_MIN_RECORDS`(3)건 이상, 마지막 제안일에서 `QUIET_DAYS`(14)일이 지났거나 제안한 적이 없을 때다.
+- [ ] `portfolioSuggestion()`(순수 함수)이 다섯 상태 가운데 하나를 낸다: `due` · `few_records` · `has_portfolio` · `in_progress` · `recently_suggested`. `due`는 포트폴리오 0건, 끝나지 않은 제작 0건(이 대화에서 시작한 것과 사용자의 다른 제작), 내용이 있는 기록 `PORTFOLIO_SUGGESTION_MIN_RECORDS`(3)건 이상, 마지막 제안일에서 `QUIET_DAYS`(14)일이 지났거나 제안한 적이 없을 때다.
 - [ ] 실행을 시작할 때 서버가 `memory.portfolio`(`records` · `suggest`)를 싣는다. 컨설턴트 프로필이 연결되지 않은 서비스에서는 `memory`가 null이라 제안도 없다.
 - [ ] 새 도구 `suggest_portfolio`(입력 없음)는 부른 시점에 조건을 다시 본다. `due`가 아니면 `AgentToolRejection`으로 까닭을 돌려주고 아무것도 적지 않는다. `due`면 정해진 질문과 두 선택지(「지금 만들어 볼게요」 · 「나중에 할게요」)의 선택지 부품을 낸다. 제안일(서울 날짜)은 그 실행이 끝까지 간 뒤에 적는다 — 실패하거나 끊긴 실행의 제안은 사용자가 보지 못했을 수 있고, 다시 보내면 다시 낼 수 있어야 한다.
 - [ ] `save_record`의 응답에 저장 직후의 판단을 싣는다(`portfolio: { records, suggest }`, `AgentInput.portfolioNow()`). 같은 실행에서 문턱을 넘은 경우에도 그 답변에서 제안이 나온다.
@@ -29,7 +29,7 @@ date: 2026-11-23
 
 - `consultant/portfolio-suggestion.ts`: 문턱 상수와 순수 함수 `portfolioSuggestion({ records, portfolios, brewing, lastSuggestedOn, today })`.
 - `ConsultantService.portfolioSuggestedOn(userId)` · `markPortfolioSuggested(userId, at)`: 프로필의 `portfolioSuggestion.lastSuggestedOn`을 읽고 쓴다. `profile()`의 모양은 바꾸지 않는다(「내 진행」 응답이 `strictObject`다).
-- `AgentChatService.portfolioSuggestionState(row)`: 기록(`career.listRecords`, 최근 100건 가운데 `isEmpty`가 아닌 것), 포트폴리오(`portfolios.list`, 1건), 이 대화의 제작(`row.brewIds`), 제안일을 읽어 순수 함수에 넘긴다.
+- `AgentChatService.portfolioSuggestionState(row)`: 기록(`career.listRecords`, 최근 100건 가운데 `isEmpty`가 아닌 것), 포트폴리오(`portfolios.list`, 1건), 이 대화의 제작(`row.brewIds`와 메시지의 `brewStart`), 사용자의 끝나지 않은 제작(`AgentBrewDeps.openBrews` — 홈 읽기 모델 `EngagementApi.home`의 `activeBrews`), 제안일을 읽어 순수 함수에 넘긴다.
 - `AgentInput.suggestPortfolio()` · `portfolioNow()`와 도구 `suggest_portfolio`, `AgentMemory.portfolio`, 지침 한 문단.
 
 **상태가 사는 곳.** 제안일은 사용자당 하나라 컨설턴트 프로필에 둔다. 대화가 바뀌어도 이어져야 하기 때문이다.
@@ -55,7 +55,7 @@ flowchart TD
 ## 함정
 
 - 기억은 실행을 시작할 때 읽는다. 같은 실행에서 세 번째 기록을 저장하면 `memory.portfolio`는 낡은 값이다. 그래서 `save_record` 응답과 도구 처리기가 다시 판단한다.
-- 다른 대화에서 시작해 아직 생성하지 않은 제작은 보지 않는다. 사용자의 제작을 나열하는 진입점이 `materials` 모듈에 없다. 그 경우 제안이 한 번 나올 수 있다.
+- 「새 포트폴리오」는 제 대화를 따로 연다. 그래서 이 대화의 제작만 보면 다른 대화에서 만들던 사용자에게 제안이 나온다. 사이드바의 「만드는 중」과 같은 출처(`EngagementApi.home`의 `activeBrews`)로 사용자의 끝나지 않은 제작을 함께 센다. 만들다 멈춘 제작이 남아 있는 사용자에게는 제안이 나오지 않는다.
 - 서버가 시작한 실행(`event`)에서는 도구를 쓸 수 없다(`step`의 거절). 제안도 그 실행에서는 나오지 않는다.
 - `consultant_profiles`의 검증 규칙은 `additionalProperties: false`다. 0040 없이 새 칸을 쓰면 쓰기가 실패한다. 로컬 Mongo는 워크트리들이 함께 쓰지만 0040은 허용 칸을 더하기만 한다.
 - 도구가 하나라도 빠지면 실행이 실패한다(`AGENT_ALLOWED_TOOLS` 검사). `TOOL_NAMES` · `TOOL_LABELS` · 등록을 함께 넣는다.

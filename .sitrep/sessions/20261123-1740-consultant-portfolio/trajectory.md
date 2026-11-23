@@ -39,3 +39,10 @@
 - `pnpm --filter @expresso/web typecheck` 통과, `pnpm --filter @expresso/web test` 585 통과
 - `pnpm test:infra` 433 통과(65 파일). 같은 날 `origin/main`(e51b9839)은 431 통과
 - 발견: 기기 부하가 높을 때(load average 80 이상) 전체 통합 테스트에서 5초 시간 초과가 실행마다 다른 테스트에 1~6건 났고 단독 실행은 통과함. 한 번은 실행 도중 로컬 Mongo 컨테이너가 재시작되어(18:59) 44개 파일이 연결 끊김으로 실패함. 부하가 내려간 뒤 다시 돌려 전부 통과
+
+### 19:13 · T5 완료 · 만드는 중인 제작을 판단에 넣음
+- 발견: 「새 포트폴리오」는 제 대화를 따로 열어, 이 대화의 제작만 보면 다른 대화에서 만들던 사용자에게 제안이 나옴. 사이드바의 「만드는 중」이 쓰는 홈 읽기 모델(`EngagementApi.home`의 `activeBrews`)을 `AgentBrewDeps.openBrews`로 이어 함께 셈
+- 판단을 읽지 못하면 제안 도구가 답변을 실패시키지 않고 돌려보내게 함
+- 로컬 확인: 제작 1건이 남은 계정의 새 대화에서 「이제 뭘 하면 좋을까요?」 → 제안 없이 그 제작을 이어 가라고 안내
+- 마지막 검증: `pnpm --filter @expresso/backend typecheck` 통과, `pnpm --filter @expresso/backend test` 795 통과, `pnpm test:infra` 433 통과(65 파일, 105초)
+

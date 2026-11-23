@@ -18,7 +18,7 @@ export const PORTFOLIO_SUGGESTION_MIN_RECORDS = 3;
  * - `due`: 지금 권한다.
  * - `few_records`: 기록이 문턱에 못 미친다.
  * - `has_portfolio`: 이미 포트폴리오가 있다.
- * - `in_progress`: 이 대화에서 제작을 시작했다.
+ * - `in_progress`: 끝나지 않은 제작이 있다.
  * - `recently_suggested`: 같은 제안을 한 지 `QUIET_DAYS`일이 지나지 않았다.
  */
 export type PortfolioSuggestion = "due" | "few_records" | "has_portfolio" | "in_progress" | "recently_suggested";
@@ -28,7 +28,7 @@ export interface PortfolioSuggestionInput {
   records: number;
   /** 사용자의 포트폴리오 수(휴지통 제외). */
   portfolios: number;
-  /** 이 대화에서 시작한 제작의 수. */
+  /** 끝나지 않은 제작의 수. 이 대화에서 시작한 것과 사용자의 다른 제작을 함께 센다. */
   brewing: number;
   /** 마지막으로 제안한 서울 날짜. 제안한 적이 없으면 null. */
   lastSuggestedOn: string | null;

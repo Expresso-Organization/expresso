@@ -68,7 +68,7 @@ export const PORTFOLIO_SUGGESTION_OPTIONS = ["지금 만들어 볼게요", "나�
 /** 지금은 제안할 때가 아닐 때 에이전트에게 돌려주는 까닭. 에이전트는 제안하지 않고 하던 답을 이어 간다. */
 const PORTFOLIO_NOT_DUE: Record<Exclude<PortfolioSuggestion, "due">, string> = {
   has_portfolio: "이미 포트폴리오가 있습니다. 제안하지 말고 답변을 이어 가십시오.",
-  in_progress: "이 대화에서 이미 포트폴리오 제작을 시작했습니다. 제안하지 말고 지금 제작의 다음 할 일을 안내하십시오.",
+  in_progress: "이미 만드는 중인 포트폴리오 제작이 있습니다. 제안하지 마십시오. 이 대화에서 시작한 제작이면 그 제작의 다음 할 일을 안내하십시오.",
   few_records: "기록이 아직 적습니다. 제안하지 말고 답변을 이어 가십시오.",
   recently_suggested: "최근에 이미 제안했습니다. 다시 제안하지 말고 답변을 이어 가십시오.",
 };
@@ -158,21 +158,22 @@ export class AgentChatService {
     return memoryForModel(profile, await this.recentDigests(userId, conversationId), await this.commitments?.open(userId) ?? [], diagnosisForModel(await this.currentDiagnosis(userId)), checkins, await this.portfolioForModel(row).catch(() => null));
   }
   /**
-   * 포트폴리오를 먼저 제안할 때인가(`consultant/portfolio-suggestion.ts`). 기록 · 포트폴리오 · 이 대화의 제작 · 마지막 제안일을 지금 읽어 판단한다.
-   * `current`는 지금 쓰는 답변이다 — 같은 실행에서 방금 시작한 제작도 센다. 기록은 최근 100건 가운데 내용이 있는 것만 센다.
+   * 포트폴리오를 먼저 제안할 때인가(`consultant/portfolio-suggestion.ts`). 기록 · 포트폴리오 · 끝나지 않은 제작 · 마지막 제안일을 지금 읽어 판단한다.
+   * 제작은 이 대화에서 시작한 것과 사용자의 다른 끝나지 않은 제작(`AgentBrewDeps.openBrews`)을 함께 센다. `current`는 지금 쓰는 답변이다 —
+   * 같은 실행에서 방금 시작한 제작도 센다. 기록은 최근 100건 가운데 내용이 있는 것만 센다.
    * 프로필이나 포트폴리오 목록이 연결되지 않은 서비스(테스트 · 미리보기)에서는 판단하지 않는다(null).
-   * 다른 대화에서 시작해 아직 생성하지 않은 제작은 보지 않는다 — 사용자의 제작을 나열하는 진입점이 없다.
    * 실행을 시작할 때는 읽지 못해도 대화를 막지 않는다(`memory`가 null로 싣는다) — 그때는 권하지 않을 뿐이다.
    */
   private async portfolioSuggestionState(row: AgentConversationDoc, current?: AgentMessage): Promise<{ status: PortfolioSuggestion; records: number } | null> {
     if (!this.consultant || !this.portfolios?.list) return null;
-    const [records, portfolios, lastSuggestedOn] = await Promise.all([
+    const [records, portfolios, lastSuggestedOn, openBrews] = await Promise.all([
       this.career.listRecords(row.userId, { sort: "updated_desc", limit: 100 }),
       this.portfolios.list(row.userId, { limit: 1 }),
       this.consultant.portfolioSuggestedOn(row.userId),
+      this.brews?.openBrews?.(row.userId) ?? 0,
     ]);
     const filled = records.data.filter(record => !record.isEmpty).length;
-    const brewing = [...row.messages, ...(current ? [current] : [])].flatMap(message => message.tools).filter(tool => tool.brewStart).length + Object.keys(row.brewIds ?? {}).length;
+    const brewing = [...row.messages, ...(current ? [current] : [])].flatMap(message => message.tools).filter(tool => tool.brewStart).length + Object.keys(row.brewIds ?? {}).length + openBrews;
     return { status: portfolioSuggestion({ records: filled, portfolios: portfolios.data.length, brewing, lastSuggestedOn, today: seoulDay(new Date()) }), records: filled };
   }
   private async portfolioForModel(row: AgentConversationDoc, current?: AgentMessage): Promise<AgentMemory["portfolio"]> {
@@ -1209,7 +1210,8 @@ export class AgentChatService {
         // 기억은 실행을 시작할 때 읽은 값이다. 방금 저장한 기록으로 문턱을 넘었는지는 저장 직후에 다시 본다.
         portfolioNow: () => this.portfolioForModel(row, message),
         suggestPortfolio: async () => {
-          const state = await this.portfolioSuggestionState(row, message);
+          // 판단을 읽지 못했으면 권하지 않는다. 오류를 그대로 던지면 답변 전체가 실패한다.
+          const state = await this.portfolioSuggestionState(row, message).catch(() => { throw new AgentToolRejection(["지금은 포트폴리오를 권할 때인지 확인할 수 없습니다. 제안하지 말고 답변을 이어 가십시오."]); });
           if (!state) throw new AgentToolRejection(["이 환경에서는 포트폴리오 제안을 쓸 수 없습니다. 제안하지 말고 답변을 이어 가십시오."]);
           if (state.status !== "due") throw new AgentToolRejection([PORTFOLIO_NOT_DUE[state.status]]);
           portfolioSuggested = true;
