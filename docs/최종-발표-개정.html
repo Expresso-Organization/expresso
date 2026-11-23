@@ -669,7 +669,8 @@ svg [data-morph] { transform-box: fill-box; }
 
 /* ── 단계 흐름 — 사용자 흐름과 관리자 기능 ───────────────── */
 .fp-line { position: relative; flex: 1 1 auto; min-height: 0; }
-.fp-line svg.under { position: absolute; inset: 0; width: 1712px; height: 100%; max-width: none; max-height: none; }
+/* 선 그림은 viewBox(1712 × 677)를 늘이지 않고 그대로 둡니다 — 남은 높이가 바뀌어도 칸 · 정거장과 어긋나지 않게 */
+.fp-line svg.under { position: absolute; left: 0; top: 0; width: 1712px; height: 677px; max-width: none; max-height: none; }
 .fp-line .band {
   position: absolute; top: 0; height: 430px; border-radius: 18px; background: var(--ex-white);
   border: 1px solid var(--ex-line-200);
