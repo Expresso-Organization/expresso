@@ -498,6 +498,8 @@ a.headAction:hover {
 }
 
 .scoreFill {
+  /* span이라 블록으로 바꾸지 않으면 폭과 높이가 먹지 않는다. */
+  display: block;
   height: 100%;
   border-radius: 999px;
 }
@@ -772,6 +774,8 @@ a.headAction:hover {
 }
 
 .axisFill {
+  /* span이라 블록으로 바꾸지 않으면 폭과 높이가 먹지 않는다. */
+  display: block;
   height: 100%;
   border-radius: 999px;
 }
@@ -1010,6 +1014,8 @@ a.headAction:hover {
 }
 
 .requirementFill {
+  /* span이라 블록으로 바꾸지 않으면 폭과 높이가 먹지 않는다. */
+  display: block;
   height: 100%;
   background: var(--ex-bg-inverse);
   border-radius: 999px;
