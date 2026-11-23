@@ -3281,7 +3281,8 @@ window.deck = new Deck();
     await libReady(); await need(key);
     const ev = window.__rrData[key];
     const host = document.createElement('div'); host.className = 'rp-host'; slide.querySelector('.rp-screen').appendChild(host);
-    const r = new rrweb.Replayer(ev, { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
+    // rrweb는 재생하면서 이벤트의 삭제 목록을 제자리에서 고쳐 쓴다. 재생기끼리 같은 배열을 쓰면 삭제가 사라지므로 재생기마다 복사본을 준다.
+    const r = new rrweb.Replayer(structuredClone(ev), { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
     const t0 = ev[0].timestamp; const marks = {};
     ev.forEach((e) => { if (e.type === 5 && e.data && e.data.tag === 'step') marks[e.data.payload.label] = e.timestamp - t0; });
     const p = { r, host, marks, end: ev[ev.length - 1].timestamp - t0 };
@@ -3398,7 +3399,8 @@ window.deck = new Deck();
     for (const [id, c] of Object.entries(cfg.parts)) {
       const el = document.createElement('div'); el.className = 'rx-part' + (c.fade ? ' fade' : '');
       const host = document.createElement('div'); host.className = 'rx-host'; el.appendChild(host); stage.appendChild(el);
-      const r = new rrweb.Replayer(ev, { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
+      // rrweb는 재생하면서 이벤트의 삭제 목록을 제자리에서 고쳐 쓴다. 재생기끼리 같은 배열을 쓰면 삭제가 사라지므로 재생기마다 복사본을 준다.
+      const r = new rrweb.Replayer(structuredClone(ev), { root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
       r.pause(0);
       parts[id] = { el, host, r, cfg: c, at: { x: 0, y: 0, k: 1 }, shown: false, timer: null, revealTimers: [], quiet: false };
     }
