@@ -66,9 +66,11 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
 
   it("lists the grounded bases the question writer chooses from, without a writer", async () => {
     const bases = await service.questionBases(userId, brewId);
-    expect(bases.map(({ basis }) => basis.type)).toEqual(["requirement", "requirement", "record_gap", "record_gap"]);
+    expect(bases.map(({ basis }) => basis.type)).toEqual(["requirement", "requirement", "requirement", "record_gap", "record_gap"]);
+    // 충족한 요건도 맥락을 묻는 근거로 나온다.
+    expect(bases.filter(({ basis }) => basis.type === "requirement" && basis.coverage === "covered")).toHaveLength(1);
     expect(bases[0]).toMatchObject({ basis: { type: "requirement", coverage: "missing" }, label: "PostgreSQL 장애 대응 경험이 필요합니다." });
-    expect(bases.slice(2).map(({ label }) => label).sort()).toEqual(["Incident response", "Migration project"]);
+    expect(bases.slice(3).map(({ label }) => label).sort()).toEqual(["Incident response", "Migration project"]);
     await expect(service.questionBases(otherUserId, brewId)).rejects.toMatchObject({ statusCode: 404 });
   });
 
@@ -91,7 +93,7 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB interview integration", 
   it("preserves grounded assignment, replacement, pause, and session boundaries", async () => {
     const started = await service.start(userId, brewId, "mongo-interview-start-0001");
     sessionId = started.id;
-    expect(started.questions).toHaveLength(4);
+    expect(started.questions).toHaveLength(5);
     expect(started.questions.every(({ basis }) => ["requirement", "record_gap"].includes(basis.type))).toBe(true);
     const original = started.questions[0]!;
     const replaced = await service.replaceQuestion(userId, sessionId, original.id);
