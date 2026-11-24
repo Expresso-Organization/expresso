@@ -1861,6 +1861,36 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-name .parts span { display: block; margin-top: 12px; font-size: 30px; color: var(--ex-slate-500); letter-spacing: -.015em; }
 .fd-name .plus { font-style: normal; font-size: 40px; color: var(--ex-slate-300); }
 .fd-name svg.big { flex: none; width: 500px; height: auto; max-width: none; max-height: none; }
+/* 로고 조합 — 컵 마크 + 워드마크, 이름 풀이는 그 아래 한 줄 */
+.fd-name .wm { flex-direction: column; align-items: flex-start; gap: 26px; margin-top: 84px; }
+.fd-name .wm .lock { display: flex; align-items: center; gap: 34px; }
+.fd-name .wm .mk { flex: none; width: 132px; height: 117px; max-width: none; position: relative; top: 10px; }
+.fd-name .parts { margin-top: 56px; }
+/* 오른쪽 기기 — 뒤 모니터(홈) · 앞 노트북(포트폴리오 생성). 화면은 둘 다 16:10 실제 캡처.
+   자리는 .fd-name-row 기준 px. 모니터 왼쪽은 첫 줄 글(오른쪽 끝 963px)과 57px 띄웁니다. */
+.fd-name-row { position: relative; }
+.fd-dev { position: absolute; left: 916px; top: 50px; width: 796px; height: 740px; pointer-events: none; }
+.fd-dev .mon, .fd-dev .lap { position: absolute; left: 0; top: 0; width: 796px; height: 740px; }
+.fd-dev .scr { position: absolute; overflow: hidden; background: #000; }
+.fd-dev .scr img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; object-position: top left; }
+.fd-dev .scr::after { content: ""; position: absolute; inset: 0; background: linear-gradient(118deg, rgba(255, 255, 255, .09) 0%, rgba(255, 255, 255, .03) 34%, rgba(255, 255, 255, 0) 34.2%); }
+/* 모니터 — 알루미늄 테두리 3px · 검은 유리 · 화면 738×461 */
+.fd-dev .mon .case { position: absolute; left: 0; top: 0; width: 780px; height: 503px; border-radius: 24px; background: linear-gradient(180deg, #eef1f4, #c3c9d2); box-shadow: 0 34px 60px -26px rgba(22, 34, 58, .34), 0 2px 6px rgba(22, 34, 58, .10); }
+.fd-dev .mon .case::before { content: ""; position: absolute; inset: 3px; border-radius: 21px; background: #0b0d10; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06); }
+.fd-dev .mon .scr { left: 21px; top: 21px; width: 738px; height: 461px; border-radius: 3px; }
+.fd-dev .mon .neck { position: absolute; left: 306px; top: 503px; width: 168px; height: 120px; clip-path: polygon(5% 0, 95% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, rgba(22, 30, 44, .38), rgba(22, 30, 44, 0) 34px), linear-gradient(90deg, #aab2bd 0%, #d9dde3 16%, #eff1f4 50%, #d9dde3 84%, #aab2bd 100%); }
+.fd-dev .mon .foot { position: absolute; left: 268px; top: 621px; width: 244px; height: 17px; clip-path: polygon(3% 0, 97% 0, 100% 100%, 0 100%); background: linear-gradient(180deg, #f6f7f9 0%, #e0e4e9 55%, #a9b1bc 100%); }
+.fd-dev .mon .cast { position: absolute; left: 228px; top: 628px; width: 324px; height: 26px; border-radius: 50%; background: radial-gradient(closest-side, rgba(22, 34, 58, .26), rgba(22, 34, 58, 0)); }
+/* 노트북 — 화면 400×250 · 노치 · 힌지 · 본체와 엄지 홈 */
+.fd-dev .lap .lid { position: absolute; left: 341px; top: 423px; width: 423px; height: 277px; border-radius: 17px 17px 5px 5px; background: linear-gradient(180deg, #e3e7ec, #bfc6cf); box-shadow: 0 30px 44px -22px rgba(22, 34, 58, .38); }
+.fd-dev .lap .lid::before { content: ""; position: absolute; inset: 1.5px; border-radius: 15.5px 15.5px 4px 4px; background: #0b0d10; }
+.fd-dev .lap .scr { left: 352.5px; top: 436.5px; width: 400px; height: 250px; border-radius: 2px; }
+.fd-dev .lap .notch { position: absolute; left: 523px; top: 436.5px; width: 59px; height: 10px; border-radius: 0 0 6px 6px; background: #0b0d10; }
+.fd-dev .lap .notch::after { content: ""; position: absolute; left: 27px; top: 3px; width: 4px; height: 4px; border-radius: 50%; background: #1e2a3a; }
+.fd-dev .lap .hinge { position: absolute; left: 349px; top: 699px; width: 407px; height: 6px; border-radius: 0 0 3px 3px; background: linear-gradient(180deg, #41454c, #15171a); }
+.fd-dev .lap .base { position: absolute; left: 306px; top: 704px; width: 490px; height: 14px; border-radius: 2px 2px 12px 12px / 2px 2px 10px 10px; background: linear-gradient(180deg, #f7f8fa 0%, #e2e6ea 40%, #b4bbc5 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9); }
+.fd-dev .lap .base::before { content: ""; position: absolute; left: 203px; top: 0; width: 84px; height: 5px; border-radius: 0 0 7px 7px; background: linear-gradient(180deg, #aab2bd, #d3d8de); }
+.fd-dev .lap .cast { position: absolute; left: 290px; top: 708px; width: 522px; height: 28px; border-radius: 50%; background: radial-gradient(closest-side, rgba(22, 34, 58, .30), rgba(22, 34, 58, 0)); }
 /* ── 구현 화면 ── */
 .fd-scr-row { display: grid; grid-template-columns: 990px 1fr; gap: 64px; flex: 1 1 auto; min-height: 0; }
 .fd-scr .win { align-self: start; border-radius: 16px; border: 1px solid var(--ex-line-200); background: var(--ex-white); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--ex-elevation-raised); }
@@ -2127,14 +2157,17 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fd-name-row">
         <div class="txt">
           <div class="tag catch in dl-2"><span class="lead">Express <span class="your ex-anim-your">your</span></span><span class="roller ex-anim-merge" aria-hidden="true"><span class="stack ex-anim-roll"><span class="word">work.</span><span class="word">idea.</span><span class="word">self.</span><span class="word">work.</span></span></span><span class="ex-sr-only">Express your work. idea. self.</span></div>
-          <div class="wm"><span class="in dl-3" style="display: inline-block">Expre<em>ss</em>o</span><small class="in in-fade dl-3">Express + Espresso</small></div>
+          <div class="wm"><div class="lock in dl-3"><svg class="mk" viewBox="0 0 54 48" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span>Expre<em>ss</em>o</span></div><small class="in in-fade dl-3">Express + Espresso</small></div>
           <div class="parts">
             <div class="in dl-4"><b>Express</b><span>나의 경험과 역량을 표현</span></div>
             <i class="plus in in-fade dl-4">+</i>
             <div class="in dl-5"><b>Espresso</b><span>경험의 핵심을 한 잔에 압축</span></div>
           </div>
         </div>
-        <svg class="big in in-fade dl-3" viewBox="0 0 54 48" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg>
+        <div class="fd-dev">
+          <div class="mon in dl-4"><i class="cast"></i><div class="neck"></div><div class="foot"></div><div class="case"></div><div class="scr"><img src="assets/최종-발표/v20-home.webp" alt="Expresso 홈 화면"></div></div>
+          <div class="lap in dl-6"><i class="cast"></i><div class="lid"></div><div class="scr"><img src="assets/최종-발표/rr/stills/refine1-end.webp" alt="Expresso 포트폴리오 생성 화면"></div><i class="notch"></i><div class="hinge"></div><div class="base"></div></div>
+        </div>
       </div>
     </div>
   </div>
