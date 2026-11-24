@@ -26,3 +26,5 @@
 | [20261123-2121-match-production-release](sessions/20261123-2121-match-production-release/session.md) | Expresso 추천모델 운영 배포 | 완료됨 | 100% |
 
 | [20261124-0318-chat-usability](sessions/20261124-0318-chat-usability/session.md) | Expresso 채팅 사용성 개선 | 완료됨 | 100% |
+
+| [20261124-1304-email-free-publish](sessions/20261124-1304-email-free-publish/session.md) | 포트폴리오 배포 메일 인증 해제 | 완료됨 | 100% |

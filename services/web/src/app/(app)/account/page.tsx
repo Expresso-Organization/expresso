@@ -113,7 +113,7 @@ export default async function AccountPage() {
                     <div className={styles.dataNote}>{formatDay(verifiedAt)} 확인됨</div>
                   ) : (
                     <div className={styles.consentRenew}>
-                      인증 전에는 포트폴리오를 공개 주소에 올릴 수 없습니다
+                      이메일 주소를 확인해 주세요
                     </div>
                   )}
                 </div>

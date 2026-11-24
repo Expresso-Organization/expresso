@@ -32,7 +32,7 @@ export default async function VerifyEmailPage({
     return (
       <StandaloneNotice
         title="이메일을 확인했습니다"
-        body={`${data.email}은(는) 이제 확인된 주소입니다. 포트폴리오를 공개 주소에 올릴 수 있습니다.`}
+        body={`${data.email}은(는) 이제 확인된 주소입니다.`}
         backHref={back.href}
         backLabel={back.label}
       />

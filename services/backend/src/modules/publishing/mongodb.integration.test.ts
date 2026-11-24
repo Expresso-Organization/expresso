@@ -8,6 +8,7 @@ import { mongoCollections } from "@expresso/database";
 import sharp from "sharp";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
+import { buildApi } from "../../api/build-app.js";
 import { createMongoFixture } from "../../../test/support/mongodb.js";
 import { LocalMediaStorage } from "../../platform/storage/local.js";
 import { MongoCareerService } from "../career/index.js";
@@ -44,6 +45,36 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)("MongoDB publishing, media and ex
     service = new MongoPublishingService(fixture.resource, "test-signing-secret-at-least-16"); media = new MongoMediaService(fixture.resource, new LocalMediaStorage(storageRoot));
   }, 60_000);
   afterAll(async () => { await fixture?.dispose(); rmSync(storageRoot, { recursive: true, force: true }); });
+
+  it("publishes and redeploys an unverified account over HTTP while preserving login and ownership checks", async () => {
+    const identity = new MongoIdentityService(fixture.resource);
+    const session = await identity.login({ email: (await mongoCollections(fixture.resource.db).users.findOne({ _id: firstUser }))!.email, password: "correct-horse-battery" });
+    expect(session.user.emailVerifiedAt).toBeNull();
+    const app = buildApi({
+      config: { nodeEnv: "test", host: "127.0.0.1", port: 4000, logLevel: "silent", redisUrl: "redis://127.0.0.1:1", outboxPollIntervalMs: 1000, outboxBatchSize: 25, outboxMaxAttempts: 5, queuePrefix: "publish-unverified" },
+      identityService: identity,
+      publishingService: service,
+    });
+    const slug = `http-unverified-${randomUUID().slice(0, 8)}`;
+    const headers = { authorization: `Bearer ${session.session.accessToken}` };
+    try {
+      const url = `/v1/portfolios/${firstPortfolio}/deployments`;
+      expect((await app.inject({ method: "POST", url, payload: { slug } })).statusCode).toBe(401);
+      expect((await app.inject({ method: "POST", url: `/v1/portfolios/${secondPortfolio}/deployments`, headers, payload: { slug } })).statusCode).toBe(404);
+      const first = await app.inject({ method: "POST", url, headers, payload: { slug } });
+      expect(first.statusCode).toBe(201);
+      const second = await app.inject({ method: "POST", url, headers, payload: { slug } });
+      expect(second.statusCode).toBe(201);
+      expect(second.json().data.version).toBe(first.json().data.version + 1);
+      const published = await app.inject({ method: "GET", url: `/v1/public/portfolios/${slug}` });
+      expect(published.statusCode).toBe(200);
+      expect(published.body).toContain("frozen Mongo page");
+      expect((await mongoCollections(fixture.resource.db).users.findOne({ _id: firstUser }))!.emailVerifiedAt).toBeNull();
+    } finally {
+      await app.close();
+      await service.unpublish(firstUser, firstPortfolio);
+    }
+  });
 
   it("reserves one slug under a two-owner publication race", async () => {
     const input = PublishPortfolioSchema.parse({ slug: `mongo-race-${randomUUID().slice(0, 8)}` }); const results = await Promise.allSettled([service.publish(firstUser, firstPortfolio, input), service.publish(secondUser, secondPortfolio, input)]);

@@ -49,8 +49,8 @@ services/backend/src/worker
 일회용 토큰(비밀번호 재설정 30분 · 이메일 인증 24시간)은 `identity_tokens`에 해시만 두고
 `findOneAndUpdate`로 원자적으로 소비합니다. 재설정 확인은 비밀번호 갱신 · 전 세션 취소 ·
 새 세션 발급을 한 트랜잭션에 넣습니다. 발행(`POST /portfolios/:id/deployments`)은
-`emailVerifiedAt`이 없으면 403 `email_verification_required`로 답합니다 — `publishing`은
-`identity`의 속을 열지 않고 인증 컨텍스트의 사용자 필드만 봅니다.
+로그인과 포트폴리오 소유권을 검사하며 이메일 인증 없이 허용합니다.
+발행해도 계정의 `emailVerifiedAt`은 바뀌지 않습니다.
 
 ## 배포 단위
 

@@ -335,16 +335,16 @@ describe.skipIf(!(process.env.TEST_MONGODB_URL ?? process.env.TEST_MONGODB_ADMIN
     expect(await collections.identityTokens.countDocuments({ userId: account!._id, kind: "email_verification" })).toBe(1);
   });
 
-  it("blocks publishing until the email is verified, then confirms through the mailed link", async () => {
+  it("allows publishing without email verification and still confirms through the mailed link", async () => {
     const { session } = AuthSessionResponseSchema.parse(
       (await app.inject({ method: "POST", url: "/v1/auth/login", payload: { email, password: PASSWORD } })).json(),
     ).data;
     const authorization = `Bearer ${session.accessToken}`;
     const publish = () => app.inject({ method: "POST", url: `/v1/portfolios/${crypto.randomUUID()}/deployments`, headers: { authorization }, payload: { slug: "gate-check" } });
 
-    const blocked = await publish();
-    expect(blocked.statusCode).toBe(403);
-    expect(ApiErrorResponseSchema.parse(blocked.json()).error.details).toEqual({ reason: "email_verification_required" });
+    const before = await app.inject({ method: "GET", url: "/v1/me", headers: { authorization } });
+    expect(CurrentUserResponseSchema.parse(before.json()).data.emailVerifiedAt).toBeNull();
+    expect((await publish()).statusCode).toBe(201);
 
     // 가입 직후 보낸 메일이 60초 안이라 재발송은 429다.
     const tooSoon = await app.inject({ method: "POST", url: "/v1/auth/email-verification", headers: { authorization } });

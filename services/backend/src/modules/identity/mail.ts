@@ -51,7 +51,7 @@ export function emailVerificationMail(to: string, token: string, links: AuthMail
   const title = "이메일 주소를 확인해 주십시오";
   const paragraphs = [
     `이 주소(${to})로 Expresso에 가입하셨습니다.`,
-    `아래 버튼을 누르면 확인이 끝나고 포트폴리오를 공개 주소에 올릴 수 있습니다. 링크는 ${ttlHours}시간 동안 유효합니다.`,
+    `아래 버튼을 눌러 이메일 주소를 확인해 주세요. 링크는 ${ttlHours}시간 동안 유효합니다.`,
   ];
   const footer = "가입한 적이 없다면 이 메일은 무시하셔도 됩니다. 아무 일도 일어나지 않습니다.";
   return {
