@@ -30,4 +30,4 @@ flowchart TD
 blank의 최소 높이 때문에 낮은 화면에서는 content 안에서 스크롤해야 한다.
 
 ## 완료 기준
-pnpm typecheck와 pnpm test 통과. 실제 로컬 API와 로그인한 분석 화면에서 데스크톱·모바일·접힌 사이드바·낮은 창·Reduce Motion을 확인한다.
+pnpm typecheck와 pnpm test 통과. 실제 로컬 API와 로그인한 분석 화면에서 데스크톱·모바일·접힌 사이드바·낮은 창을 확인한다. Reduce Motion은 공용 CSS 규칙을 코드로 확인한다.
