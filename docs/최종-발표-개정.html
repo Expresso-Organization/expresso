@@ -3920,7 +3920,8 @@ window.deck = new Deck();
     }
     const st = { cfg, parts, notes, slide: s, stages }; Object.values(parts).forEach((p) => { p.st = st; }); state.set(s, st); return st;
   };
-  const RX_OPTS = (host) => ({ root: host, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
+  /* 녹화된 focus 이벤트가 발표 방향키를 가로채지 않도록 실제 포커스 이동을 끕니다. */
+  const RX_OPTS = (host) => ({ root: host, triggerFocus: false, mouseTail: false, showWarning: false, insertStyleRules: ['body * { animation-name: none !important; }'] });
   /* rrweb는 재생하면서 녹화 이벤트를 제자리에서 고쳐 써, 같은 재생기로 되감아 다시 재생하면 변경이 빠질 때가 있습니다. 처음으로 되돌릴 때는 새 재생기를 만듭니다. */
   const fresh = (p) => { if (!p.r) { if (p.img) p.img.src = BASE + p.cfg.img; return; } try { p.r.pause(); if (p.r.destroy) p.r.destroy(); } catch (e) {} p.host.innerHTML = ''; p.r = new rrweb.Replayer(structuredClone(p.ev), RX_OPTS(p.host)); p.r.pause(0); };
   const timers = [];
