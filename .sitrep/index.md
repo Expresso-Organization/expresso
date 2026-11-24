@@ -28,3 +28,5 @@
 | [20261124-0318-chat-usability](sessions/20261124-0318-chat-usability/session.md) | Expresso 채팅 사용성 개선 | 완료됨 | 100% |
 
 | [20261124-1304-email-free-publish](sessions/20261124-1304-email-free-publish/session.md) | 포트폴리오 배포 메일 인증 해제 | 완료됨 | 100% |
+
+| [20261124-1348-deck-fullscreen-keys](sessions/20261124-1348-deck-fullscreen-keys/session.md) | 발표 전체화면 방향키 긴급 수정 | 완료됨 | 100% |
