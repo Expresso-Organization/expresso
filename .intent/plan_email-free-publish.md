@@ -6,6 +6,9 @@ status: accepted
 - services/backend/src/modules/identity/auth.integration.test.ts
 - services/backend/src/modules/publishing/mongodb.integration.test.ts
 - services/web/src/app/(app)/edit/[portfolioId]/deploy/deploy-actions.ts
+- services/backend/src/modules/identity/mail.ts
+- services/web/src/app/(app)/account/page.tsx
+- services/web/src/app/verify-email/page.tsx
 - docs/architecture/backend.md
 - .sitrep/의 이번 작업 기록
 
@@ -23,3 +26,6 @@ flowchart TD
  A["routes.ts·deploy-actions.ts 수정"]:::risk --> B["통합 테스트·backend.md 갱신"] --> C["타입·단위·인프라 검증"]
  classDef risk fill:#FCEBEB,stroke:#A32D2D,color:#501313
 ```
+
+## 구현 중 확인한 안내
+계정 화면·인증 완료 화면·인증 메일에도 메일 인증이 배포 조건이라는 안내가 있어 함께 정리한다.

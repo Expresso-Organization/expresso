@@ -10,6 +10,7 @@ status: accepted
 ## 설계
 publishing/routes.ts의 메일 인증 게이트와 deploy-actions.ts의 전용 오류 안내를 제거한다.
 기존 identity 통합 테스트를 새 정책으로 갱신하고 MongoDB 실제 발행 HTTP 검증을 보강한다.
+계정 화면·인증 완료 화면·인증 메일에서 배포 조건이라는 안내를 제거한다.
 아키텍처 문서의 배포 조건을 갱신한다.
 
 ```mermaid
