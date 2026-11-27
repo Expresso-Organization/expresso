@@ -70,6 +70,18 @@ PRINT_FIX = r"""
 }
 """
 
+# Chrome 은 흐린 그림자(box-shadow · drop-shadow)를 PDF 소프트 마스크로 넣는데, macOS 미리보기 · Safari(PDFKit)는
+# 이것을 회색 상자로 그린다. 인쇄할 때만 흐린 그림자를 흐림 없는 1px 테두리로 바꿔 어느 뷰어에서나 같게 보이게 한다.
+SHADOW_FIX = r"""
+() => {
+  document.querySelectorAll('*').forEach((el) => {
+    const cs = getComputedStyle(el);
+    if (cs.boxShadow && cs.boxShadow !== 'none') el.style.setProperty('box-shadow', '0 0 0 1px rgba(22, 34, 58, .08)', 'important');
+    if (cs.filter && cs.filter.includes('drop-shadow')) el.style.setProperty('filter', cs.filter.replace(/drop-shadow\((?:[^()]|\([^()]*\))*\)/g, '').trim() || 'none', 'important');
+  });
+}
+"""
+
 HIDE_UI = ".deck-controls,.deck-progress,.overview,.de-bar,.de-undo,.deck-export-dialog{display:none!important}"
 
 
@@ -117,6 +129,7 @@ def print_pages(browser, url: str) -> tuple[bytes, list[dict]]:
         }))""")
     page.emulate_media(media="print")
     page.evaluate(PRINT_FIX)
+    page.evaluate(SHADOW_FIX)
     page.wait_for_timeout(300)
     pdf = page.pdf(width=f"{W}px", height=f"{H}px", print_background=True, prefer_css_page_size=True)
     ctx.close()
@@ -159,7 +172,8 @@ def shrink_images(writer: PdfWriter) -> None:
                 obj = img.indirect_reference.get_object()
                 if obj.get("/Filter") == "/DCTDecode" or "/SMask" in obj or len(obj._data) < 150_000:
                     continue
-                if img.image.mode in ("RGB", "L"):
+                # 회색조(L) 그림은 Chrome 이 그림자 · 흐림의 마스크로 쓴다. JPEG로 바꾸면 그림자가 회색 상자로 깨지므로 색 그림만 다시 담는다.
+                if img.image.mode == "RGB":
                     img.replace(img.image, quality=JPEG_QUALITY)
             except Exception:  # 다시 담지 못한 그림은 원래대로 둔다
                 continue
