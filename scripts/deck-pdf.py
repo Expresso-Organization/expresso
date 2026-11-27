@@ -38,7 +38,7 @@ from pypdf import PdfReader, PdfWriter
 ROOT = Path(__file__).resolve().parent.parent
 W, H = 1920, 1080
 SCALE = 2           # 재생 장을 찍는 배율 — 3840×2160
-JPEG_QUALITY = 92
+JPEG_QUALITY = 85
 
 # 워드마크의 「0」은 화면에서 `background-clip: text` 그러데이션으로 대각선 아래만 색을
 # 바꾼다. Chrome PDF에서는 글자 옆에 세로 머리카락 선이 생기고, macOS 미리보기에서는 대각선이
@@ -151,6 +151,20 @@ def rx_frames(browser, url: str, index: int) -> list[bytes]:
     return frames
 
 
+def shrink_images(writer: PdfWriter) -> None:
+    """Chrome 인쇄는 화면 그림(이미지)을 무손실로 넣는다. 큰 불투명 그림만 JPEG로 다시 담아 용량을 줄인다(메일 첨부 20MB 한도)."""
+    for page in writer.pages:
+        for img in page.images:
+            try:
+                obj = img.indirect_reference.get_object()
+                if obj.get("/Filter") == "/DCTDecode" or "/SMask" in obj or len(obj._data) < 150_000:
+                    continue
+                if img.image.mode in ("RGB", "L"):
+                    img.replace(img.image, quality=JPEG_QUALITY)
+            except Exception:  # 다시 담지 못한 그림은 원래대로 둔다
+                continue
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("deck", type=Path, help="docs/ 아래 HTML 발표 자료")
@@ -193,6 +207,7 @@ def main() -> int:
     title = args.title or (html.unescape(m.group(1)).strip() if m else deck.stem)
     writer.add_metadata({"/Title": title, "/Creator": "scripts/deck-pdf.py"})
     writer.page_mode = "/UseOutlines"
+    shrink_images(writer)
     for p in writer.pages:
         p.compress_content_streams()
     out.parent.mkdir(parents=True, exist_ok=True)
