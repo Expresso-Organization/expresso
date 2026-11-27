@@ -1315,6 +1315,46 @@ svg [data-morph] { transform-box: fill-box; }
   .slide.vh-dusk .ring, .slide.vh-dusk .space, .slide.vh-dusk::before, .slide.vh-recede .vh-orbit { animation: none !important; transform: none !important; opacity: 1 !important; }
 }
 
+/* ── 주요 기능 — 뒤에 이어질 네 기능을 화면과 함께 미리 보여 주는 2×2 그리드. 흰 상자 · 테두리 · 그림자, 색은 선 아이콘에만. ── */
+.fd-four .body { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; padding-bottom: 8px; }
+.fd-four .four { flex: 1 1 auto; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 28px 32px; }
+.fd-four .card { display: grid; grid-template-columns: 480px 1fr; gap: 36px; align-items: center; padding: 22px; background: var(--ex-white); border: 1px solid var(--ex-line-200); border-radius: 20px; box-shadow: 0 14px 36px rgba(22, 34, 58, .08), 0 2px 6px rgba(22, 34, 58, .04); }
+.fd-four .img { width: 480px; height: 300px; border-radius: 10px; overflow: hidden; box-shadow: 0 0 0 1px rgba(22, 34, 58, .08); background: var(--ex-white); }
+.fd-four .img img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left; }
+.fd-four .no { font-family: var(--ex-font-brand); font-weight: 300; font-size: 34px; letter-spacing: -.02em; color: var(--ex-slate-400, var(--ex-slate-500)); }
+.fd-four .nm { margin-top: 10px; display: flex; align-items: center; gap: 12px; font-size: 38px; font-weight: 600; letter-spacing: -.03em; color: var(--ex-ink-900); }
+.fd-four .nm i { font-size: 36px; color: var(--ex-espresso); }
+.fd-four .txt p { margin: 16px 0 0; font-size: 26px; line-height: 1.45; word-break: keep-all; letter-spacing: -.015em; color: var(--ex-slate-500); }
+
+/* ── 포트폴리오 표현 방식 — 프로젝트 제안서의 비교 지면(4a3c6905)을 이 덱의 머리 · 제목 틀로 옮긴 것.
+   오른쪽은 실제 사이트를 지면 안에서 실행해 스크롤하고, 인쇄에서는 찍어 둔 첫 화면으로 바꿉니다. ── */
+.fd-cmp .cmp-grid { display: grid; grid-template-columns: 440px 72px 1fr; gap: 24px; align-items: start; }
+.fd-cmp .cmp-label { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin: 0 0 16px; }
+.fd-cmp .cmp-label h3 { margin: 0; font-size: 26px; font-weight: 600; color: var(--ex-ink-900); }
+.fd-cmp .cmp-label span { font-size: 17px; color: var(--ex-slate-500); }
+.fd-cmp .cmp-paper { display: block; height: 600px; background: var(--ex-white); border: 1px solid var(--ex-line-200); overflow: auto; overscroll-behavior: contain; }
+.fd-cmp .cmp-paper img { display: block; width: 100%; height: auto; border-bottom: 8px solid var(--ex-tint-50); }
+.fd-cmp .cmp-arrow { margin-top: 330px; text-align: center; font-size: 40px; color: var(--ex-espresso); }
+.fd-cmp .cmp-browser { height: 600px; border: 1px solid var(--ex-line-200); border-radius: 18px; overflow: hidden; background: var(--ex-white); }
+.fd-cmp .cmp-bar { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 16px; border-bottom: 1px solid var(--ex-line-200); background: var(--ex-tint-50); }
+.fd-cmp .cmp-bar i { width: 7px; height: 7px; border-radius: 50%; background: var(--ex-slate-300); }
+.fd-cmp .cmp-bar a { margin-left: 16px; font: 14px var(--ex-font-mono); color: var(--ex-slate-500); text-decoration: none; }
+.fd-cmp .cmp-view { position: relative; height: 560px; }
+.fd-cmp .cmp-view iframe { display: block; width: 100%; height: 560px; border: 0; background: var(--ex-white); }
+.fd-cmp .cmp-still { display: none; width: 100%; height: 560px; object-fit: cover; object-position: top left; }
+.fd-cmp .cmp-load { position: absolute; inset: auto 12px 12px; display: flex; align-items: center; justify-content: center; gap: 16px; padding: 12px; border: 1px solid var(--ex-line-200); border-radius: 8px; background: var(--ex-white); color: var(--ex-slate-500); font-size: 16px; }
+.fd-cmp .cmp-load[hidden] { display: none; }
+.fd-cmp .cmp-load p { margin: 0; }
+.fd-cmp .cmp-load button { padding: 10px 20px; border: 1px solid var(--ex-line-200); border-radius: 8px; background: var(--ex-tint-50); color: var(--ex-ink-900); font: inherit; cursor: pointer; }
+.fd-cmp .cmp-load a { color: var(--ex-espresso); font-size: 18px; }
+.fd-cmp .cmp-cap { margin: 16px 0 0; font-size: 24px; color: var(--ex-slate-500); }
+.fd-cmp .cmp-cap.em { color: var(--ex-espresso); font-weight: 600; }
+@media print {
+  .fd-cmp .cmp-paper { overflow: hidden; }
+  .fd-cmp .cmp-view iframe, .fd-cmp .cmp-load { display: none !important; }
+  .fd-cmp .cmp-still { display: block; }
+}
+
 /* 제목에서 바뀌는 뒷부분 — inline-block 이어야 등장 transform 이 먹는다 */
 .fp h2 .tail { display: inline-block; }
 
@@ -1891,6 +1931,10 @@ svg [data-morph] { transform-box: fill-box; }
 .fd-dev .lap .base { position: absolute; left: 306px; top: 704px; width: 490px; height: 14px; border-radius: 2px 2px 12px 12px / 2px 2px 10px 10px; background: linear-gradient(180deg, #f7f8fa 0%, #e2e6ea 40%, #b4bbc5 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9); }
 .fd-dev .lap .base::before { content: ""; position: absolute; left: 203px; top: 0; width: 84px; height: 5px; border-radius: 0 0 7px 7px; background: linear-gradient(180deg, #aab2bd, #d3d8de); }
 .fd-dev .lap .cast { position: absolute; left: 290px; top: 708px; width: 522px; height: 28px; border-radius: 50%; background: radial-gradient(closest-side, rgba(22, 34, 58, .30), rgba(22, 34, 58, 0)); }
+/* 포트폴리오 생성 화면이 읽히도록 노트북을 1.5배로 — 받침 오른쪽 끝을 기준으로 키우고 아래로 내린다.
+   등장 연출이 transform 을 쓰므로 크기와 위치는 scale · translate 속성으로 따로 준다. 모니터는 겹침이 줄도록 왼쪽 위로 비킨다. */
+.fd-dev .lap { transform-origin: 796px 718px; scale: 1.5; translate: 0 60px; }
+.fd-dev .mon { translate: -24px -36px; }
 /* ── 구현 화면 ── */
 .fd-scr-row { display: grid; grid-template-columns: 990px 1fr; gap: 64px; flex: 1 1 auto; min-height: 0; }
 .fd-scr .win { align-self: start; border-radius: 16px; border: 1px solid var(--ex-line-200); background: var(--ex-white); overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--ex-elevation-raised); }
@@ -2057,8 +2101,8 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="head in dl-2"><h2>목차</h2></div>
     <div class="body">
       <div class="fp-cols fp-toc fd-toc">
-        <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li><span data-ch="toc-bg" style="display: inline-block">선정 배경</span></li></ul></div>
-        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>이름의 뜻</li><li>벤치마킹 사례와 차별점</li><li>주요 기능<ul class="sub"><li>커리어 기록</li><li>채용 공고 검색</li><li>포트폴리오 생성</li><li>배포와 분석</li></ul></li></ul></div>
+        <div class="in dl-3"><div class="n">1</div><div class="t">문제의식</div><ul><li><span data-ch="toc-bg" style="display: inline-block">선정 배경</span></li><li>포트폴리오 표현 방식</li></ul></div>
+        <div class="in dl-4"><div class="n">2</div><div class="t">프로젝트 정체성과 핵심 가치</div><ul><li>서비스 개요</li><li>이름의 뜻</li><li>벤치마킹 사례와 차별점</li><li>서비스 흐름</li><li>주요 기능<ul class="sub"><li>커리어 기록</li><li>채용 공고 검색</li><li>포트폴리오 생성</li><li>배포와 분석</li></ul></li></ul></div>
         <div class="in dl-5"><div class="n">3</div><div class="t">주요 아키텍처</div><ul><li>시스템 구성</li><li>AI 모델 구성</li><li>추천 모델 개발 이유</li><li>추천 모델 아키텍처</li><li>추천 모델 학습 데이터</li><li>추천 모델 평가 결과</li></ul></div>
         <div class="in dl-6"><div class="n">4</div><div class="t">개발 과정</div>
           <ul><li>개발 범위</li><li>1.0 설계 범위 완성</li><li>Expresso 1.0의 한계</li><li>활동 탐색</li><li>퍼스널 컨텍스트 구조</li><li>개발팀 구성 및 역할</li></ul>
@@ -2111,6 +2155,47 @@ svg [data-morph] { transform-box: fill-box; }
       </div>
     </div>
     <p class="concl in in-fade dl-9"><i class="ph ph-arrow-right"></i>지원할 때마다 같은 자료를 다시 모으고 고쳐 쓰는 반복 작업</p>
+  </div>
+</section>
+
+<section class="slide fp fd-cmp" data-title="포트폴리오 표현 방식" data-kind="이력서 · 포트폴리오 비교">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">1</span><span class="sec">문제의식</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>포트폴리오 표현 방식</h2>
+      <p class="sub">텍스트 이력서와 디자인된 포트폴리오</p>
+    </div>
+    <div class="body">
+      <div class="cmp-grid">
+        <div class="in dl-3">
+          <div class="cmp-label"><h3>이력서 문서</h3><span>원본 CV · 3쪽</span></div>
+          <article class="cmp-paper" data-deck-scroll tabindex="0" aria-label="박민재 원본 CV 3쪽, 스크롤하여 보기">
+            <img src="assets/프로젝트-제안서/cv-page-1.png" alt="박민재 원본 이력서 1쪽 — 연구 관심 분야, 프로필, 학력, 논문" width="1414" height="2000">
+            <img src="assets/프로젝트-제안서/cv-page-2.png" alt="박민재 원본 이력서 2쪽 — 경력 및 프로젝트" width="1414" height="2000">
+            <img src="assets/프로젝트-제안서/cv-page-3.png" alt="박민재 원본 이력서 3쪽 — 기술, 수상, 영어, 장학금" width="1414" height="2000">
+          </article>
+          <p class="cmp-cap">텍스트 중심의 경력 나열</p>
+        </div>
+        <div class="cmp-arrow in dl-4" aria-hidden="true"><i class="ph ph-arrow-right"></i></div>
+        <div class="in dl-5" data-deck-scroll>
+          <div class="cmp-label"><h3>디자인된 포트폴리오</h3><span>디자인 참고 예시 · 화면 안에서 스크롤</span></div>
+          <div class="cmp-browser">
+            <div class="cmp-bar"><i></i><i></i><i></i><a href="https://minjae-park.pages.dev" target="_blank" rel="noopener noreferrer">minjae-park.pages.dev ↗</a></div>
+            <div class="cmp-view" aria-busy="true">
+              <template data-portfolio-template><iframe src="https://minjae-park.pages.dev/" title="박민재 디자인 포트폴리오 참고 예시" loading="eager"></iframe></template>
+              <!-- 인쇄 · PDF 에서는 실행 중인 사이트 대신 같은 크기로 찍어 둔 첫 화면을 보여 줍니다. -->
+              <img class="cmp-still" src="assets/최종-발표/minjae-portfolio.webp" alt="박민재 디자인 포트폴리오 첫 화면" width="2304" height="1120">
+              <div class="cmp-load" role="status">
+                <p data-portfolio-status>포트폴리오 로딩 중</p>
+                <button type="button" data-portfolio-retry>다시 불러오기</button>
+                <a href="https://minjae-park.pages.dev/" target="_blank" rel="noopener noreferrer">새 탭에서 열기 ↗</a>
+              </div>
+            </div>
+          </div>
+          <p class="cmp-cap em">눈에 띄는 핵심 역량, 이미지와 함께 전달하는 성과</p>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -2187,11 +2272,11 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
-<section class="slide fp fd-live" data-title="주요 기능" data-kind="단계 흐름">
+<section class="slide fp fd-live" data-title="서비스 흐름" data-kind="단계 흐름">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
     <div class="head in dl-2">
-      <h2>주요 기능</h2>
+      <h2>서비스 흐름</h2>
       <p class="sub">커리어 기록에서 방문 분석까지의 사용자 흐름</p>
     </div>
     <div class="body">
@@ -2237,6 +2322,24 @@ svg [data-morph] { transform-box: fill-box; }
   </div>
 </section>
 
+<section class="slide fp fd-four" data-title="주요 기능" data-kind="네 기능 그리드">
+  <div class="frame">
+    <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
+    <div class="head in dl-2">
+      <h2>주요 기능</h2>
+      <p class="sub">커리어 기록 · 채용 공고 검색 · 포트폴리오 생성 · 배포와 분석</p>
+    </div>
+    <div class="body">
+      <div class="four">
+        <div class="card in dl-3"><div class="img"><img src="assets/최종-발표/prod-career.png" alt="커리어 기록 프로젝트 갤러리 화면" width="2880" height="1800"></div><div class="txt"><div class="no">01</div><div class="nm"><i class="ph ph-notebook"></i>커리어 기록</div><p>경험 · 프로젝트 · 이력을 한곳에 모아 관리</p></div></div>
+        <div class="card in dl-4"><div class="img"><img src="assets/최종-발표/rr/stills/jobs2-start.webp" alt="채용 공고 검색 화면" width="2880" height="1800"></div><div class="txt"><div class="no">02</div><div class="nm"><i class="ph ph-magnifying-glass"></i>채용 공고 검색</div><p>내 기록과 관련도가 높은 채용 공고부터 확인</p></div></div>
+        <div class="card in dl-5"><div class="img"><img src="assets/최종-발표/rr/stills/refine1-end.webp" alt="포트폴리오 생성 · 다듬기 화면" width="2880" height="1800"></div><div class="txt"><div class="no">03</div><div class="nm"><i class="ph ph-palette"></i>포트폴리오 생성</div><p>채용 공고마다 맞춘 포트폴리오를 대화로 완성</p></div></div>
+        <div class="card in dl-6"><div class="img"><img src="assets/최종-발표/rr/stills/deploy2-end.webp" alt="배포한 포트폴리오의 방문 분석 화면" width="2880" height="1800"></div><div class="txt"><div class="no">04</div><div class="nm"><i class="ph ph-chart-line-up"></i>배포와 분석</div><p>공개 주소로 공유하고 방문자의 열람 여부 확인</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="slide fp" data-title="주요 기능 · 커리어 기록" data-kind="주요 화면">
   <div class="frame">
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
@@ -2250,15 +2353,15 @@ svg [data-morph] { transform-box: fill-box; }
         <div class="txt">
           <div class="in dl-4">
             <div class="k">기록 정리</div>
-            <div class="lead">경험 · 프로젝트 · 이력의<br>카테고리별 문서 정리</div>
+            <div class="lead">흩어진 경험을 카테고리별 문서로<br>모아 언제든 다시 활용</div>
             <div class="cats"><span><i class="ph ph-chat-circle"></i>경험</span><span><i class="ph ph-briefcase"></i>프로젝트</span><span><i class="ph ph-graduation-cap"></i>학력 · 이력</span><span><i class="ph ph-certificate"></i>자격증 · 수상</span><span><i class="ph ph-article"></i>학술 · 집필</span><span><i class="ph ph-users-three"></i>활동 · 리더십</span><span><i class="ph ph-code"></i>스킬 · 도구</span></div>
           </div>
           <div class="in dl-5">
             <div class="k">다양한 보기</div>
             <ol class="views">
-              <li><button type="button" data-shot="0" class="on"><span class="ic"><i class="ph ph-table"></i></span><span><b>테이블</b><small><em>경험</em>역량 · 시기 한 줄 비교</small></span></button></li>
-              <li><button type="button" data-shot="1"><span class="ic"><i class="ph ph-squares-four"></i></span><span><b>갤러리</b><small><em>프로젝트</em>역할 · 기술 · 성과 카드</small></span></button></li>
-              <li><button type="button" data-shot="2"><span class="ic"><i class="ph ph-calendar-blank"></i></span><span><b>타임라인</b><small><em>학력 · 이력</em>학교 · 회사의 시간순 흐름</small></span></button></li>
+              <li><button type="button" data-shot="0" class="on"><span class="ic"><i class="ph ph-table"></i></span><span><b>테이블</b><small><em>경험</em>기록 전체를 역량 · 시기로 한 번에 비교</small></span></button></li>
+              <li><button type="button" data-shot="1"><span class="ic"><i class="ph ph-squares-four"></i></span><span><b>갤러리</b><small><em>프로젝트</em>프로젝트마다 역할 · 기술 · 성과를 카드로 훑어보기</small></span></button></li>
+              <li><button type="button" data-shot="2"><span class="ic"><i class="ph ph-calendar-blank"></i></span><span><b>타임라인</b><small><em>학력 · 이력</em>학력 · 경력을 시간순으로 확인</small></span></button></li>
             </ol>
           </div>
         </div>
@@ -2272,10 +2375,10 @@ svg [data-morph] { transform-box: fill-box; }
     <div class="hd in in-fade dl-1"><svg class="mark" viewBox="0 0 54 48" width="44" height="39" aria-hidden="true"><circle cx="38.13" cy="24.0" r="9.33" style="fill:none;stroke:var(--ex-crema);stroke-width:3.99"/><circle cx="22.0" cy="24.0" r="21.93" style="fill:var(--ex-surface-50)"/><path d="M5.15 26.28 A17 17 0 0 0 38.85 26.28 Z" style="fill:var(--ex-espresso)"/><circle cx="22.0" cy="24.0" r="17.0" style="fill:none;stroke:var(--ex-espresso);stroke-width:5.5"/></svg><span class="hd-wm">Expresso</span><span class="no">2</span><span class="sec">프로젝트 정체성과 핵심 가치</span><span class="pg"></span></div>
     <div class="head in dl-2">
       <h2>채용 공고 검색</h2>
-      <p class="sub">문장으로 찾고, 일치도와 요건별 근거로 고르는 채용 공고</p>
+      <p class="sub">문장으로 찾고, 내 기록과의 관련도로 고르는 채용 공고</p>
     </div>
     <div class="body"><div class="rx-stage"></div></div>
-    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']", "[class*='qBDErq__left']"], "pad": 32, "css": "[class*='__parsedRow'] > *:not([data-rx-go]){opacity:0!important}[class*='__scoreFill'],[class*='__axisFill'],[class*='__requirementFill']{display:block!important}html[data-rx-show~='results'] [class*='__results'],html[data-rx-show~='results'] [class*='__results'] *{visibility:visible!important}", "fly": {"input": "[class*='__queryText']", "row": "[class*='__parsedRow']", "label": "[class*='__parsedLabel']", "chip": "button[class*='__parsedChip']", "rest": "[class*='__parsedAdd'], [class*='__parsedSaveForm']", "words": [{"w": "서울", "chip": 0}, {"w": "프로덕트 데이터 분석가", "chip": 1}], "note": "n1", "step": 1, "cam": ["rest", 640, 1500, "fly"], "noteAt": 1750}, "cam": {"type0": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 640, "k": 3.25}, "type1": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 640, "k": 3.6}, "rest": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 480, "k": 2.85}, "top": {"sel": "[class*='__queryCard']", "fx": 0, "fy": 0, "x": 104, "y": 380, "k": 0.9}, "full": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 836.5, "y": 446.2, "k": 0.7}, "list": {"sel": "[class*='__queryCard']", "fx": 0, "fy": 0, "x": 170, "y": 392, "k": 1.25}, "row5": {"sel": "[class*='__rows'] > :nth-child(5)", "fx": 0, "fy": 0.5, "x": 170, "y": 640, "k": 1.25}, "detail": {"sel": "[class*='qBDErq__role']", "fx": 0, "fy": 0.5, "x": 200, "y": 470, "k": 1.35}, "reqs": {"sel": "[class*='qBDErq__section']", "text": "자격 요건", "fx": 0, "fy": 0, "x": 200, "y": 392, "k": 1.2}, "detailFull": {"sel": "[class*='qBDErq__role']", "fx": 0, "fy": 0.5, "x": 653.4, "y": 464.4, "k": 0.7}}}, "page": {"img": "stills/jobs2-start.webp", "follow": "search", "full": true, "cam": {}}}, "notes": {"n1": {"x": 226, "y": 474, "w": 1500, "big": true, "k": "AI 조건 해석", "t": "문장을 지역 · 직무 조건으로 바꿔 검색"}, "n2": {"x": 876, "y": 334, "w": 780, "mid": true, "k": "내 기록과의 일치도", "t": "커리어 기록 28건을 추천 모델로 비교한 점수 순 정렬"}, "n3": {"x": 96, "y": 562, "w": 1500, "mid": true, "k": "요건별 근거 기록", "t": "채용 공고 요건마다 근거가 된 내 기록을 연결"}}, "steps": [{"do": [[0, "stage", null, 0], [0, "seek", "search", 3950], [0, "cam", "search", "full"], [0, "show", "search"], [0, "show", "page"], [1000, "cam", "search", "type0", 1600, "fly"], [1350, "dissolve", "page", 1000], [2400, "play", "search", 3950, 7000], [2400, "cam", "search", "type1", 3100, "sine"], [5500, "seek", "search", 7950], [5600, "stage", null, 1]], "settle": 8200}, {"settle": 3200, "do": [[0, "stage", null, 2], [0, "hide", "n1"], [0, "cam", "search", "list", 1300, "fly"], [500, "reveal", "search", "[class*='__resultsHead'], [class*='__rows'] > :nth-child(-n+5)", 110, {"token": "results", "bars": true}], [1700, "note", "n2"]]}, {"settle": 6200, "do": [[0, "hide", "n2"], [0, "src", "page", "stills/jobs2-end.webp"], [0, "cam", "search", "row5", 1000, "fly"], [900, "pick", "search", {"row": "[class*='__rows'] > :nth-child(5)", "title": "Product Data Analyst (Data Intelligence)"}], [1700, "leave", "search", ["[class*='__queryCard']", "[class*='__results']"]], [1900, "carry", "search", {"at": 12000, "to": "[class*='qBDErq__role']", "box": "[class*='qBDErq__left']", "title": "Product Data Analyst (Data Intelligence)"}], [1900, "reveal", "search", "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", 150, {"delay": 1250}], [1900, "cam", "search", "detail", 900, "fly"], [1900, "stage", null, 3], [3000, "focus", "search", {"within": "[class*='qBDErq__left']", "keep": "[class*='qBDErq__section']", "text": "자격 요건"}], [3100, "cam", "search", "reqs", 1100, "fly"], [4800, "note", "n3"]]}, {"settle": 2600, "do": [[0, "hide", "n3"], [0, "cam", "search", "detailFull", 1500, "fly"], [350, "appear", "page", 1000]]}], "stages": ["문장 입력", "조건 해석", "일치도 정렬", "요건별 근거"]}</script>
+    <script type="application/json" class="rx-cfg">{"scene": "jobs2", "parts": {"search": {"sel": ["[class*='__queryCard']", "[class*='__searchBar']", "[class*='qBDErq__left']"], "pad": 32, "css": "[class*='__parsedRow'] > *:not([data-rx-go]){opacity:0!important}[class*='__scoreFill'],[class*='__axisFill'],[class*='__requirementFill']{display:block!important}html[data-rx-show~='results'] [class*='__results'],html[data-rx-show~='results'] [class*='__results'] *{visibility:visible!important}", "fly": {"input": "[class*='__queryText']", "row": "[class*='__parsedRow']", "label": "[class*='__parsedLabel']", "chip": "button[class*='__parsedChip']", "rest": "[class*='__parsedAdd'], [class*='__parsedSaveForm']", "words": [{"w": "서울", "chip": 0}, {"w": "프로덕트 데이터 분석가", "chip": 1}], "note": "n1", "step": 1, "cam": ["rest", 640, 1500, "fly"], "noteAt": 1750}, "cam": {"type0": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 640, "k": 3.25}, "type1": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 640, "k": 3.6}, "rest": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 330, "y": 480, "k": 2.85}, "top": {"sel": "[class*='__queryCard']", "fx": 0, "fy": 0, "x": 104, "y": 380, "k": 0.9}, "full": {"sel": "[class*='__queryText'], [class*='__searchInput']", "fx": 0, "fy": 0.5, "x": 836.5, "y": 446.2, "k": 0.7}, "list": {"sel": "[class*='__queryCard']", "fx": 0, "fy": 0, "x": 170, "y": 392, "k": 1.25}, "row5": {"sel": "[class*='__rows'] > :nth-child(5)", "fx": 0, "fy": 0.5, "x": 170, "y": 640, "k": 1.25}, "detail": {"sel": "[class*='qBDErq__role']", "fx": 0, "fy": 0.5, "x": 200, "y": 470, "k": 1.35}, "reqs": {"sel": "[class*='qBDErq__section']", "text": "자격 요건", "fx": 0, "fy": 0, "x": 200, "y": 392, "k": 1.2}, "detailFull": {"sel": "[class*='qBDErq__role']", "fx": 0, "fy": 0.5, "x": 653.4, "y": 464.4, "k": 0.7}}}, "page": {"img": "stills/jobs2-start.webp", "follow": "search", "full": true, "cam": {}}}, "notes": {"n1": {"x": 226, "y": 474, "w": 1500, "big": true, "k": "AI 조건 해석", "t": "원하는 조건을 문장으로 입력하면 지역 · 직무 필터로 바로 검색"}, "n2": {"x": 876, "y": 334, "w": 780, "mid": true, "k": "내 기록과의 관련도", "t": "검색된 채용 공고와 내 커리어 기록 사이의 관련도를 추천 모델로 도출"}, "n3": {"x": 96, "y": 562, "w": 1500, "mid": true, "k": "자격요건 충족도", "t": "채용 공고에서 요구하는 자격요건을 내 커리어 기록이 얼마나 충족하는지 빠르게 확인"}}, "steps": [{"do": [[0, "stage", null, 0], [0, "seek", "search", 3950], [0, "cam", "search", "full"], [0, "show", "search"], [0, "show", "page"], [1000, "cam", "search", "type0", 1600, "fly"], [1350, "dissolve", "page", 1000], [2400, "play", "search", 3950, 7000], [2400, "cam", "search", "type1", 3100, "sine"], [5500, "seek", "search", 7950], [5600, "stage", null, 1]], "settle": 8200}, {"settle": 3200, "do": [[0, "stage", null, 2], [0, "hide", "n1"], [0, "cam", "search", "list", 1300, "fly"], [500, "reveal", "search", "[class*='__resultsHead'], [class*='__rows'] > :nth-child(-n+5)", 110, {"token": "results", "bars": true}], [1700, "note", "n2"]]}, {"settle": 6200, "do": [[0, "hide", "n2"], [0, "src", "page", "stills/jobs2-end.webp"], [0, "cam", "search", "row5", 1000, "fly"], [900, "pick", "search", {"row": "[class*='__rows'] > :nth-child(5)", "title": "Product Data Analyst (Data Intelligence)"}], [1700, "leave", "search", ["[class*='__queryCard']", "[class*='__results']"]], [1900, "carry", "search", {"at": 12000, "to": "[class*='qBDErq__role']", "box": "[class*='qBDErq__left']", "title": "Product Data Analyst (Data Intelligence)"}], [1900, "reveal", "search", "[class*='__blockTitleRow'], [class*='__requirement']:not([class*='Label']):not([class*='Note'])", 150, {"delay": 1250}], [1900, "cam", "search", "detail", 900, "fly"], [1900, "stage", null, 3], [3000, "focus", "search", {"within": "[class*='qBDErq__left']", "keep": "[class*='qBDErq__section']", "text": "자격 요건"}], [3100, "cam", "search", "reqs", 1100, "fly"], [4800, "note", "n3"]]}, {"settle": 2600, "do": [[0, "hide", "n3"], [0, "cam", "search", "detailFull", 1500, "fly"], [350, "appear", "page", 1000]]}], "stages": ["문장 입력", "조건 해석", "관련도 정렬", "자격요건 충족도"]}</script>
   </div>
 </section>
 
@@ -2287,7 +2390,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">채용 공고에 맞춰 기록을 고르고, AI 대화로 채워 만드는 포트폴리오</p>
     </div>
     <div class="body"><div class="rx-stage"></div></div>
-    <script type="application/json" class="rx-cfg">{"scene": "portfolio1", "stages": ["공고 분석", "재료 고르기", "AI 대화", "디자인 선택", "다듬기"], "parts": {"main": {"fill": "portfolio1-preview.html", "cam": {"full": {"sel": "html", "fx": 0.5, "fy": 0, "x": 960, "y": 372, "k": 0.7}, "make": {"sel": "[class*='__headPrimary']", "fx": 0.5, "fy": 0.5, "x": 960, "y": 600, "k": 2.6}, "analysis": {"sel": "[class*='WizardShell'][class*='__stage'] [class*='__left']", "fx": 0, "fy": 0, "x": 150, "y": 392, "k": 1.45}, "materials": {"sel": "[class*='WizardShell'][class*='__stage'] [class*='__left']", "fx": 0, "fy": 0, "x": 150, "y": 392, "k": 1.45}, "chat": {"sel": "[class*='__card']:has([class*='__thread'])", "fx": 0, "fy": 0.62, "x": 150, "y": 690, "k": 1.2}, "design": {"sel": "[class*='__designGrid']", "fx": 0, "fy": 0, "x": 150, "y": 450, "k": 1.45}, "brew": {"sel": "[class*='WizardShell'][class*='__stage']", "fx": 1, "fy": 0, "x": 1790, "y": 380, "k": 0.9}, "canvas": {"sel": "[class*='__canvas']", "fx": 0, "fy": 0, "x": 150, "y": 380, "k": 1.0}}, "vis": {"head": "[class*='__headActions']", "left": "[class*='WizardShell'][class*='__stage'] [class*='__left']", "chat": "[class*='__card']:has([class*='__thread'])", "grid": "[class*='__designGrid']", "stage": "[class*='WizardShell'][class*='__stage']", "edit": "[class*='__stage']:has([class*='__panel']) > :not([class*='__sections'])"}}, "page": {"img": "stills/portfolio1-start.webp", "follow": "main", "full": true, "cam": {}}, "ed": {"scene": "refine1", "fill": "portfolio1-preview.html", "cam": {"canvas": {"sel": "[class*='__canvas']", "fx": 0, "fy": 0, "x": 150, "y": 380, "k": 1.0}, "full": {"sel": "html", "fx": 0.5, "fy": 0, "x": 960, "y": 372, "k": 0.7}}, "vis": {"edit": "[class*='__stage']:has([class*='__panel']) > :not([class*='__sections'])"}}, "page2": {"img": "stills/refine1-end.webp", "follow": "ed", "full": true, "cam": {}}}, "notes": {"n1": {"x": 1170, "y": 260, "w": 540, "mid": true, "k": "공고 분석", "t": "공고 요건을 뽑아 내 기록과 대조 · 빈 요건 표시"}, "n2": {"x": 1236, "y": 260, "w": 480, "mid": true, "k": "재료 고르기", "t": "요건에 맞춘 커리어 기록 순위"}, "n3": {"x": 976, "y": 260, "w": 740, "mid": true, "k": "AI 대화", "t": "빈 요건을 질문하고 답을 기록으로 저장"}, "n4": {"x": 856, "y": 300, "w": 760, "mid": true, "k": "디자인 선택", "t": "포트폴리오에 입힐 디자인 시스템 고르기"}, "n5": {"x": 46, "y": 300, "w": 560, "mid": true, "k": "생성", "t": "고른 기록과 디자인으로 지면 생성"}, "n5b": {"x": 1226, "y": 260, "w": 490, "mid": true, "k": "생성된 지면", "t": "완성된 포트폴리오를 바로 확인"}, "n6": {"x": 1226, "y": 260, "w": 490, "mid": true, "k": "다듬기", "t": "요소를 골라 대화로 수정 요청"}, "n7": {"x": 1226, "y": 260, "w": 490, "mid": true, "k": "새 판", "t": "고친 내용은 판 2로 저장 · 되돌리기 가능"}}, "steps": [{"settle": 7600, "do": [[0, "stage", null, 0], [0, "seek", "main", 2200], [0, "cam", "main", "full"], [0, "show", "main"], [0, "show", "page"], [0, "vis", "main", {"on": ["head"]}], [900, "cam", "main", "make", 1500, "fly"], [1200, "dissolve", "page", 900], [2300, "mark", "main", {"sel": "[class*='__headPrimary']", "ring": true, "radius": 20}], [3000, "unmark", "main"], [3100, "vis", "main", {"off": ["head"]}], [3100, "play", "main", 6500, 7700], [4200, "cam", "main", "analysis", 1300, "fly"], [4300, "reveal", "main", "[class*='WizardShell'][class*='__stage'] [class*='__left'] [class*='__group'] > *", 90, {"token": "left"}], [5700, "mark", "main", {"sel": "[class*='__rowMissing']", "text": "Amplitude, Google Analytics 등 행동 기반 분석 도구 활용 경험", "ring": true, "ringSel": "[class*='__rowMissing']", "radius": 10}], [5900, "mark", "main", {"sel": "[class*='__rowMissing']", "text": "A/B 테스트 설계 및 통계적 유의성 검증 실무 경험", "ring": true, "ringSel": "[class*='__rowMissing']", "radius": 10}], [6300, "note", "n1"]]}, {"settle": 3800, "do": [[0, "stage", null, 1], [0, "hide", "n1"], [0, "unmark", "main"], [0, "play", "main", 11300, 12400], [300, "cam", "main", "materials", 1200, "fly"], [500, "reveal", "main", "[class*='WizardShell'][class*='__stage'] [class*='__left'] [class*='__bodyRow']", 60, {"token": "left"}], [1900, "mark", "main", {"sel": "[class*='WizardShell'][class*='__stage'] [class*='__left'] [class*='__bodyRow']", "text": "GA4 BigQuery 퍼널 분석으로", "ring": true, "ringSel": "[class*='__bodyRow']", "radius": 6}], [2400, "note", "n2"]]}, {"settle": 6800, "do": [[0, "stage", null, 2], [0, "hide", "n2"], [0, "unmark", "main"], [0, "vis", "main", {"off": ["left"]}], [0, "play", "main", 19100, 28700, 1.6], [250, "vis", "main", {"on": ["chat"]}], [300, "cam", "main", "chat", 1200, "fly"], [4800, "mark", "main", {"sel": "[class*='__recordChip']", "ring": true, "radius": 12}], [5300, "mark", "main", {"sel": "[class*='__questionRationale']", "text": "Amplitude, GA 같은 행동 기반 분석 도구"}], [5700, "note", "n3"]]}, {"settle": 3800, "do": [[0, "stage", null, 3], [0, "hide", "n3"], [0, "unmark", "main"], [0, "vis", "main", {"off": ["chat"]}], [0, "play", "main", 33100, 34300], [250, "cam", "main", "design", 1200, "fly"], [350, "reveal", "main", "[class*='__designCard']", 90, {"token": "grid"}], [1700, "mark", "main", {"sel": "[class*='__designCardSelected']", "ring": true, "radius": 14}], [2200, "note", "n4"]]}, {"settle": 6000, "do": [[0, "hide", "n4"], [0, "unmark", "main"], [0, "vis", "main", {"off": ["grid"]}], [0, "play", "main", 43200, 46500], [200, "vis", "main", {"on": ["stage"]}], [200, "cam", "main", "brew", 1200, "fly"], [1500, "note", "n5"], [3400, "hide", "n5"], [3400, "vis", "main", {"off": ["stage"]}], [3700, "seek", "main", 68900], [3700, "vis", "main", {"on": ["edit"]}], [3750, "cam", "main", "canvas", 1300, "fly"], [4900, "note", "n5b"]]}, {"settle": 6600, "do": [[0, "stage", null, 4], [0, "hide", "n5b"], [0, "seek", "ed", 2200], [0, "cam", "ed", "canvas"], [0, "vis", "ed", {"on": ["edit"]}], [0, "dissolve", "ed", 0], [0, "show", "ed", true], [30, "appear", "ed", 450], [500, "dissolve", "main", 300], [0, "dissolve", "page2", 0], [0, "show", "page2", true], [300, "play", "ed", 2200, 9200, 1.2], [2500, "mark", "ed", {"frame": "iframe[class*='freePagePreview']", "sel": "#work", "ring": true, "radius": 4}], [3300, "mark", "ed", {"sel": "[class*='__jobStarter']", "text": "성과가 먼저 보이게", "ring": true, "radius": 10}], [4000, "note", "n6"]]}, {"settle": 6000, "do": [[0, "hide", "n6"], [0, "unmark", "ed"], [0, "play", "ed", 9200, 16750, 1.5], [3300, "fill", "ed", "portfolio1-preview2.html"], [3900, "mark", "ed", {"frame": "iframe[class*='freePagePreview']", "sel": "#work small", "text": "전환율을 4.1%에서 4.4%로 올린 실험"}], [4000, "mark", "ed", {"frame": "iframe[class*='freePagePreview']", "sel": "#work small", "text": "주간 리포트 작성 시간을 6시간에서 30분으로"}], [4300, "note", "n7"]]}, {"settle": 2600, "do": [[0, "hide", "n7"], [0, "unmark", "ed"], [0, "cam", "ed", "full", 1500, "fly"], [350, "appear", "page2", 1000]]}]}</script>
+    <script type="application/json" class="rx-cfg">{"scene": "portfolio1", "stages": ["공고 분석", "재료 고르기", "AI 대화", "디자인 선택", "다듬기"], "parts": {"main": {"fill": "portfolio1-preview.html", "cam": {"full": {"sel": "html", "fx": 0.5, "fy": 0, "x": 960, "y": 372, "k": 0.7}, "make": {"sel": "[class*='__headPrimary']", "fx": 0.5, "fy": 0.5, "x": 960, "y": 600, "k": 2.6}, "analysis": {"sel": "[class*='WizardShell'][class*='__stage'] [class*='__left']", "fx": 0, "fy": 0, "x": 150, "y": 392, "k": 1.45}, "materials": {"sel": "[class*='WizardShell'][class*='__stage'] [class*='__left']", "fx": 0, "fy": 0, "x": 150, "y": 392, "k": 1.45}, "chat": {"sel": "[class*='__card']:has([class*='__thread'])", "fx": 0, "fy": 0.62, "x": 150, "y": 690, "k": 1.2}, "design": {"sel": "[class*='__designGrid']", "fx": 0, "fy": 0, "x": 150, "y": 450, "k": 1.45}, "brew": {"sel": "[class*='WizardShell'][class*='__stage']", "fx": 1, "fy": 0, "x": 1790, "y": 380, "k": 0.9}, "canvas": {"sel": "[class*='__canvas']", "fx": 0, "fy": 0, "x": 150, "y": 380, "k": 1.0}}, "vis": {"head": "[class*='__headActions']", "left": "[class*='WizardShell'][class*='__stage'] [class*='__left']", "chat": "[class*='__card']:has([class*='__thread'])", "grid": "[class*='__designGrid']", "stage": "[class*='WizardShell'][class*='__stage']", "edit": "[class*='__stage']:has([class*='__panel']) > :not([class*='__sections'])"}}, "page": {"img": "stills/portfolio1-start.webp", "follow": "main", "full": true, "cam": {}}, "ed": {"scene": "refine1", "fill": "portfolio1-preview.html", "cam": {"canvas": {"sel": "[class*='__canvas']", "fx": 0, "fy": 0, "x": 150, "y": 380, "k": 1.0}, "full": {"sel": "html", "fx": 0.5, "fy": 0, "x": 960, "y": 372, "k": 0.7}}, "vis": {"edit": "[class*='__stage']:has([class*='__panel']) > :not([class*='__sections'])"}}, "page2": {"img": "stills/refine1-end.webp", "follow": "ed", "full": true, "cam": {}}}, "notes": {"n1": {"x": 1170, "y": 260, "w": 540, "mid": true, "k": "공고 분석", "t": "채용 공고가 요구하는 요건과 내 기록에서 비어 있는 요건을 바로 확인"}, "n2": {"x": 1236, "y": 260, "w": 480, "mid": true, "k": "재료 고르기", "t": "이 공고에 내세울 커리어 기록을 추천 순서대로 받아 선택"}, "n3": {"x": 976, "y": 260, "w": 740, "mid": true, "k": "AI 대화", "t": "비어 있는 요건을 AI 질문에 답하며 채우기 · 답변은 커리어 기록으로 저장"}, "n4": {"x": 856, "y": 300, "w": 760, "mid": true, "k": "디자인 선택", "t": "지원하는 회사 · 직무에 어울리는 디자인 시스템 선택"}, "n5": {"x": 46, "y": 300, "w": 560, "mid": true, "k": "생성", "t": "고른 기록과 디자인으로 포트폴리오 지면 자동 생성"}, "n5b": {"x": 1226, "y": 260, "w": 490, "mid": true, "k": "생성된 지면", "t": "공고 요건에 맞춘 포트폴리오를 생성 직후 바로 확인"}, "n6": {"x": 1226, "y": 260, "w": 490, "mid": true, "k": "다듬기", "t": "고칠 부분을 골라 대화로 요청하면 바로 수정"}, "n7": {"x": 1226, "y": 260, "w": 490, "mid": true, "k": "새 판", "t": "수정본은 새 판으로 저장 · 언제든 이전 판으로 복원"}}, "steps": [{"settle": 7600, "do": [[0, "stage", null, 0], [0, "seek", "main", 2200], [0, "cam", "main", "full"], [0, "show", "main"], [0, "show", "page"], [0, "vis", "main", {"on": ["head"]}], [900, "cam", "main", "make", 1500, "fly"], [1200, "dissolve", "page", 900], [2300, "mark", "main", {"sel": "[class*='__headPrimary']", "ring": true, "radius": 20}], [3000, "unmark", "main"], [3100, "vis", "main", {"off": ["head"]}], [3100, "play", "main", 6500, 7700], [4200, "cam", "main", "analysis", 1300, "fly"], [4300, "reveal", "main", "[class*='WizardShell'][class*='__stage'] [class*='__left'] [class*='__group'] > *", 90, {"token": "left"}], [5700, "mark", "main", {"sel": "[class*='__rowMissing']", "text": "Amplitude, Google Analytics 등 행동 기반 분석 도구 활용 경험", "ring": true, "ringSel": "[class*='__rowMissing']", "radius": 10}], [5900, "mark", "main", {"sel": "[class*='__rowMissing']", "text": "A/B 테스트 설계 및 통계적 유의성 검증 실무 경험", "ring": true, "ringSel": "[class*='__rowMissing']", "radius": 10}], [6300, "note", "n1"]]}, {"settle": 3800, "do": [[0, "stage", null, 1], [0, "hide", "n1"], [0, "unmark", "main"], [0, "play", "main", 11300, 12400], [300, "cam", "main", "materials", 1200, "fly"], [500, "reveal", "main", "[class*='WizardShell'][class*='__stage'] [class*='__left'] [class*='__bodyRow']", 60, {"token": "left"}], [1900, "mark", "main", {"sel": "[class*='WizardShell'][class*='__stage'] [class*='__left'] [class*='__bodyRow']", "text": "GA4 BigQuery 퍼널 분석으로", "ring": true, "ringSel": "[class*='__bodyRow']", "radius": 6}], [2400, "note", "n2"]]}, {"settle": 6800, "do": [[0, "stage", null, 2], [0, "hide", "n2"], [0, "unmark", "main"], [0, "vis", "main", {"off": ["left"]}], [0, "play", "main", 19100, 28700, 1.6], [250, "vis", "main", {"on": ["chat"]}], [300, "cam", "main", "chat", 1200, "fly"], [4800, "mark", "main", {"sel": "[class*='__recordChip']", "ring": true, "radius": 12}], [5300, "mark", "main", {"sel": "[class*='__questionRationale']", "text": "Amplitude, GA 같은 행동 기반 분석 도구"}], [5700, "note", "n3"]]}, {"settle": 3800, "do": [[0, "stage", null, 3], [0, "hide", "n3"], [0, "unmark", "main"], [0, "vis", "main", {"off": ["chat"]}], [0, "play", "main", 33100, 34300], [250, "cam", "main", "design", 1200, "fly"], [350, "reveal", "main", "[class*='__designCard']", 90, {"token": "grid"}], [1700, "mark", "main", {"sel": "[class*='__designCardSelected']", "ring": true, "radius": 14}], [2200, "note", "n4"]]}, {"settle": 6000, "do": [[0, "hide", "n4"], [0, "unmark", "main"], [0, "vis", "main", {"off": ["grid"]}], [0, "play", "main", 43200, 46500], [200, "vis", "main", {"on": ["stage"]}], [200, "cam", "main", "brew", 1200, "fly"], [1500, "note", "n5"], [3400, "hide", "n5"], [3400, "vis", "main", {"off": ["stage"]}], [3700, "seek", "main", 68900], [3700, "vis", "main", {"on": ["edit"]}], [3750, "cam", "main", "canvas", 1300, "fly"], [4900, "note", "n5b"]]}, {"settle": 6600, "do": [[0, "stage", null, 4], [0, "hide", "n5b"], [0, "seek", "ed", 2200], [0, "cam", "ed", "canvas"], [0, "vis", "ed", {"on": ["edit"]}], [0, "dissolve", "ed", 0], [0, "show", "ed", true], [30, "appear", "ed", 450], [500, "dissolve", "main", 300], [0, "dissolve", "page2", 0], [0, "show", "page2", true], [300, "play", "ed", 2200, 9200, 1.2], [2500, "mark", "ed", {"frame": "iframe[class*='freePagePreview']", "sel": "#work", "ring": true, "radius": 4}], [3300, "mark", "ed", {"sel": "[class*='__jobStarter']", "text": "성과가 먼저 보이게", "ring": true, "radius": 10}], [4000, "note", "n6"]]}, {"settle": 6000, "do": [[0, "hide", "n6"], [0, "unmark", "ed"], [0, "play", "ed", 9200, 16750, 1.5], [3300, "fill", "ed", "portfolio1-preview2.html"], [3900, "mark", "ed", {"frame": "iframe[class*='freePagePreview']", "sel": "#work small", "text": "전환율을 4.1%에서 4.4%로 올린 실험"}], [4000, "mark", "ed", {"frame": "iframe[class*='freePagePreview']", "sel": "#work small", "text": "주간 리포트 작성 시간을 6시간에서 30분으로"}], [4300, "note", "n7"]]}, {"settle": 2600, "do": [[0, "hide", "n7"], [0, "unmark", "ed"], [0, "cam", "ed", "full", 1500, "fly"], [350, "appear", "page2", 1000]]}]}</script>
   </div>
 </section>
 
@@ -2299,7 +2402,7 @@ svg [data-morph] { transform-box: fill-box; }
       <p class="sub">공개 주소로 배포하고, 방문 데이터로 고칠 곳을 찾는 포트폴리오</p>
     </div>
     <div class="body"><div class="rx-stage"></div></div>
-    <script type="application/json" class="rx-cfg">{"scene": "deploy2", "stages": ["공개 주소", "공개 포트폴리오", "방문 분석", "해설과 제안"], "parts": {"main": {"css": "html[data-rx-show] [class*='__inner']:has([class*='__statusHead']) > [class*='__intro']{visibility:hidden!important}", "cam": {"full": {"sel": "html", "fx": 0.5, "fy": 0, "x": 960, "y": 372, "k": 0.7}, "publish": {"sel": "[class*='__publishButton']", "fx": 0.5, "fy": 0.5, "x": 960, "y": 600, "k": 2.6}, "deploy": {"sel": "[class*='__statusHead']", "fx": 0, "fy": 0, "x": 150, "y": 392, "k": 1.2}, "tiles": {"sel": "[class*='__content'] > [class*='__grid']", "fx": 0, "fy": 0, "x": 190, "y": 400, "k": 1.35}, "barista": {"sel": "[class*='__baristaCard']", "fx": 1, "fy": 0, "x": 1760, "y": 392, "k": 1.35}}, "vis": {"head": "[class*='__toolbarRight']", "deploy": "[class*='__inner']:has([class*='__statusHead'])", "tiles": "[class*='__content'] > [class*='__grid'] > :nth-child(-n+4)", "right": "[class*='__content'] > [class*='__grid'] > [class*='__baristaCard'], [class*='__content'] > [class*='__grid'] > :has([class*='__donutRow'])"}}, "pub": {"scene": "public2", "raw": true, "full": true, "cam": {"view": {"x": 150, "y": 380, "k": 0.66}}}, "page": {"img": "stills/deploy2-start.webp", "follow": "main", "full": true, "cam": {}}}, "notes": {"n1": {"x": 1096, "y": 260, "w": 610, "mid": true, "k": "공개 주소", "t": "포트폴리오마다 주소를 발급하고 버전 단위로 공개"}, "n2": {"x": 1120, "y": 260, "w": 590, "mid": true, "k": "공개 포트폴리오", "t": "채용 공고에 맞춰 만든 지면을 주소 하나로 공유"}, "n3": {"x": 86, "y": 330, "w": 1500, "mid": true, "k": "방문 분석", "t": "방문 · 체류 시간 · 끝까지 읽은 비율 집계"}, "n4": {"x": 46, "y": 260, "w": 760, "mid": true, "k": "해설과 제안", "t": "방문 데이터를 풀어 쓴 해설과 고칠 곳 제안"}}, "steps": [{"settle": 8000, "do": [[0, "stage", null, 0], [0, "seek", "main", 2000], [0, "cam", "main", "full"], [0, "show", "main"], [0, "show", "page"], [0, "vis", "main", {"on": ["head"]}], [900, "cam", "main", "publish", 1500, "fly"], [1200, "dissolve", "page", 900], [2300, "mark", "main", {"sel": "[class*='__publishButton']", "ring": true, "radius": 20}], [3000, "unmark", "main"], [3100, "vis", "main", {"off": ["head"]}], [3100, "play", "main", 5900, 7300], [3400, "vis", "main", {"on": ["deploy"]}], [3500, "cam", "main", "deploy", 1400, "fly"], [5000, "mark", "main", {"sel": "[class*='__statusAddress']", "text": "garyeong-musinsa.expresso.ai.kr", "ring": true, "radius": 10}], [5300, "note", "n1"]]}, {"settle": 5600, "do": [[0, "stage", null, 1], [0, "hide", "n1"], [0, "unmark", "main"], [0, "dissolve", "main", 500], [0, "seek", "pub", 1400], [0, "cam", "pub", "view"], [200, "show", "pub"], [900, "play", "pub", 1400, 8000, 1.6], [1400, "note", "n2"]]}, {"settle": 4200, "do": [[0, "stage", null, 2], [0, "hide", "n2"], [0, "dissolve", "pub", 500], [0, "vis", "main", {"off": ["deploy"]}], [0, "seek", "main", 12300], [0, "cam", "main", "tiles"], [300, "appear", "main", 600], [400, "reveal", "main", "[class*='__content'] > [class*='__grid'] > :nth-child(-n+4)", 120, {"token": "tiles"}], [1700, "note", "n3"]]}, {"settle": 4200, "do": [[0, "stage", null, 3], [0, "hide", "n3"], [0, "src", "page", "stills/deploy2-end.webp"], [0, "vis", "main", {"off": ["tiles"]}], [0, "play", "main", 19300, 20880], [200, "cam", "main", "barista", 1300, "fly"], [400, "reveal", "main", "[class*='__content'] > [class*='__grid'] > [class*='__baristaCard'], [class*='__content'] > [class*='__grid'] > :has([class*='__donutRow'])", 160, {"token": "right"}], [1700, "mark", "main", {"sel": "[class*='__baristaHead']", "text": "BARISTA", "ring": true, "ringSel": "[class*='__baristaCard']", "radius": 16}], [2200, "note", "n4"]]}, {"settle": 2600, "do": [[0, "hide", "n4"], [0, "unmark", "main"], [0, "cam", "main", "full", 1500, "fly"], [350, "appear", "page", 1000]]}]}</script>
+    <script type="application/json" class="rx-cfg">{"scene": "deploy2", "stages": ["공개 주소", "공개 포트폴리오", "방문 분석", "해설과 제안"], "parts": {"main": {"css": "html[data-rx-show] [class*='__inner']:has([class*='__statusHead']) > [class*='__intro']{visibility:hidden!important}", "cam": {"full": {"sel": "html", "fx": 0.5, "fy": 0, "x": 960, "y": 372, "k": 0.7}, "publish": {"sel": "[class*='__publishButton']", "fx": 0.5, "fy": 0.5, "x": 960, "y": 600, "k": 2.6}, "deploy": {"sel": "[class*='__statusHead']", "fx": 0, "fy": 0, "x": 150, "y": 392, "k": 1.2}, "tiles": {"sel": "[class*='__content'] > [class*='__grid']", "fx": 0, "fy": 0, "x": 190, "y": 400, "k": 1.35}, "barista": {"sel": "[class*='__baristaCard']", "fx": 1, "fy": 0, "x": 1760, "y": 392, "k": 1.35}}, "vis": {"head": "[class*='__toolbarRight']", "deploy": "[class*='__inner']:has([class*='__statusHead'])", "tiles": "[class*='__content'] > [class*='__grid'] > :nth-child(-n+4)", "right": "[class*='__content'] > [class*='__grid'] > [class*='__baristaCard'], [class*='__content'] > [class*='__grid'] > :has([class*='__donutRow'])"}}, "pub": {"scene": "public2", "raw": true, "full": true, "cam": {"view": {"x": 150, "y": 380, "k": 0.66}}}, "page": {"img": "stills/deploy2-start.webp", "follow": "main", "full": true, "cam": {}}}, "notes": {"n1": {"x": 1096, "y": 260, "w": 610, "mid": true, "k": "공개 주소", "t": "포트폴리오마다 고유 주소를 받아 바로 공개 · 이전 판도 그대로 보존"}, "n2": {"x": 1120, "y": 260, "w": 590, "mid": true, "k": "공개 포트폴리오", "t": "지원서에 주소 하나만 넣으면 채용 담당자가 바로 열람"}, "n3": {"x": 86, "y": 330, "w": 1500, "mid": true, "k": "방문 분석", "t": "방문자가 포트폴리오를 열어 보고 끝까지 읽었는지 확인"}, "n4": {"x": 46, "y": 260, "w": 760, "mid": true, "k": "해설과 제안", "t": "방문 데이터 해설과 다음에 고칠 곳 제안으로 포트폴리오 개선"}}, "steps": [{"settle": 8000, "do": [[0, "stage", null, 0], [0, "seek", "main", 2000], [0, "cam", "main", "full"], [0, "show", "main"], [0, "show", "page"], [0, "vis", "main", {"on": ["head"]}], [900, "cam", "main", "publish", 1500, "fly"], [1200, "dissolve", "page", 900], [2300, "mark", "main", {"sel": "[class*='__publishButton']", "ring": true, "radius": 20}], [3000, "unmark", "main"], [3100, "vis", "main", {"off": ["head"]}], [3100, "play", "main", 5900, 7300], [3400, "vis", "main", {"on": ["deploy"]}], [3500, "cam", "main", "deploy", 1400, "fly"], [5000, "mark", "main", {"sel": "[class*='__statusAddress']", "text": "garyeong-musinsa.expresso.ai.kr", "ring": true, "radius": 10}], [5300, "note", "n1"]]}, {"settle": 5600, "do": [[0, "stage", null, 1], [0, "hide", "n1"], [0, "unmark", "main"], [0, "dissolve", "main", 500], [0, "seek", "pub", 1400], [0, "cam", "pub", "view"], [200, "show", "pub"], [900, "play", "pub", 1400, 8000, 1.6], [1400, "note", "n2"]]}, {"settle": 4200, "do": [[0, "stage", null, 2], [0, "hide", "n2"], [0, "dissolve", "pub", 500], [0, "vis", "main", {"off": ["deploy"]}], [0, "seek", "main", 12300], [0, "cam", "main", "tiles"], [300, "appear", "main", 600], [400, "reveal", "main", "[class*='__content'] > [class*='__grid'] > :nth-child(-n+4)", 120, {"token": "tiles"}], [1700, "note", "n3"]]}, {"settle": 4200, "do": [[0, "stage", null, 3], [0, "hide", "n3"], [0, "src", "page", "stills/deploy2-end.webp"], [0, "vis", "main", {"off": ["tiles"]}], [0, "play", "main", 19300, 20880], [200, "cam", "main", "barista", 1300, "fly"], [400, "reveal", "main", "[class*='__content'] > [class*='__grid'] > [class*='__baristaCard'], [class*='__content'] > [class*='__grid'] > :has([class*='__donutRow'])", 160, {"token": "right"}], [1700, "mark", "main", {"sel": "[class*='__baristaHead']", "text": "BARISTA", "ring": true, "ringSel": "[class*='__baristaCard']", "radius": 16}], [2200, "note", "n4"]]}, {"settle": 2600, "do": [[0, "hide", "n4"], [0, "unmark", "main"], [0, "cam", "main", "full", 1500, "fly"], [350, "appear", "page", 1000]]}]}</script>
   </div>
 </section>
 
@@ -2808,8 +2911,7 @@ svg [data-morph] { transform-box: fill-box; }
       <div class="fd-act">
         <svg class="under in in-fade dl-4" viewBox="0 0 1712 642" aria-hidden="true">
           <path d="M244 111 C272 111 272 303 300 303"/><path d="M244 207 C272 207 272 303 300 303"/><path d="M244 303 C272 303 272 303 300 303"/><path d="M244 399 C272 399 272 303 300 303"/><path d="M244 495 C272 495 272 303 300 303"/>
-          <path class="go" d="M590 303 L640 303 L640 150 L900 150"/>
-          <path class="go" d="M640 303 L640 432 L690 432"/>
+          <path class="go" d="M590 303 L692 303"/>
         </svg>
         <div class="k" style="left: 0">출처</div><div class="k" style="left: 300px">수집</div>
         <div class="src in dl-3" style="top: 70px"><b>위비티</b><small>공모전 · 해커톤</small></div><div class="src in dl-3" style="top: 166px"><b>링커리어</b><small>공모전 · 해커톤</small></div><div class="src in dl-3" style="top: 262px"><b>콘테스트코리아</b><small>공모전</small></div><div class="src in dl-4" style="top: 358px"><b>Dev-Event</b><small>공모전 · 해커톤</small></div><div class="src in dl-4" style="top: 454px"><b>부트텐트</b><small>부트캠프</small></div>
@@ -2818,10 +2920,8 @@ svg [data-morph] { transform-box: fill-box; }
           <div class="st"><i class="ph ph-stack"></i><span><b>같은 활동 묶기</b><small>마감일 · 원 공고 주소 · 제목 대조</small></span></div>
           <div class="st"><i class="ph ph-list-bullets"></i><span><b>활동 목록</b><small>공모전 · 해커톤 · 부트캠프</small></span></div>
         </div>
-        <div class="shot in dl-5" style="left: 900px; top: 40px; width: 812px; height: 507px"><img src="assets/최종-발표/v20-explore-contest.webp" alt="탐색 화면의 공모전 목록" width="1440" height="900"></div>
-        <div class="tag in dl-5" style="left: 916px; top: 20px"><i class="ph ph-compass"></i>탐색 · 공모전</div>
-        <div class="shot in dl-6" style="left: 690px; top: 232px; width: 420px; height: 410px"><img src="assets/최종-발표/v20-chat-activities.webp" alt="에이전트 채팅의 활동 찾기 결과" width="561" height="547"></div>
-        <div class="tag in dl-6" style="left: 706px; top: 212px"><i class="ph ph-chat-circle-dots"></i>Expresso Agent · 활동 찾기</div>
+        <div class="shot in dl-5" style="left: 692px; top: 4px; width: 1020px; height: 638px"><img src="assets/최종-발표/v20-explore-hackathon.webp" alt="탐색 화면의 해커톤 목록" width="1440" height="900"></div>
+        <div class="tag in dl-5" style="left: 708px; top: -16px"><i class="ph ph-compass"></i>탐색 · 해커톤</div>
       </div>
     </div>
   </div>
@@ -3088,6 +3188,7 @@ class Deck {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       /* 글을 고치는 중에는 화살표가 글자 사이를 움직여야 합니다. */
       if (document.body.classList.contains('de-editing')) return;
+      if (e.target.closest?.('[data-deck-scroll]')) return;
       const k = e.key;
       /* 시연 영상이 재생 중이면 Space는 일시정지 · 다시 재생입니다(다음 장으로 넘기지 않습니다). */
       if (k === ' ' && this.filmToggle()) { e.preventDefault(); return; }
@@ -3110,7 +3211,7 @@ class Deck {
 
   bindTouch() {
     let x0 = null;
-    document.addEventListener('touchstart', (e) => { if (document.body.classList.contains('de-editing')) return; x0 = e.changedTouches[0].clientX; }, { passive: true });
+    document.addEventListener('touchstart', (e) => { if (document.body.classList.contains('de-editing') || e.target.closest?.('[data-deck-scroll]')) { x0 = null; return; } x0 = e.changedTouches[0].clientX; }, { passive: true });
     document.addEventListener('touchend', (e) => {
       if (x0 === null) return;
       const dx = e.changedTouches[0].clientX - x0;
@@ -3124,6 +3225,8 @@ class Deck {
     let lock = false;
     window.addEventListener('wheel', (e) => {
       if (lock || this.overview.classList.contains('on') || document.body.classList.contains('de-editing')) return;
+      /* 지면 안에서 스크롤하는 자리(data-deck-scroll)의 휠은 그 자리를 움직입니다. */
+      if (e.target.closest?.('[data-deck-scroll]')) return;
       if (Math.abs(e.deltaY) < 24) return;
       lock = true;
       e.deltaY > 0 ? this.next() : this.prev();
@@ -3750,11 +3853,14 @@ window.deck = new Deck();
   };
   const camApply = (p) => {
     const c = camState(p, performance.now()); if (!c) return;
-    const tf = `translate(${(c.X.x - c.P.x * c.k).toFixed(2)}px, ${(c.X.y - c.P.y * c.k).toFixed(2)}px) scale(${c.k.toFixed(4)})`;
+    const tf = `translate(${(c.X.x - c.P.x * c.k).toFixed(2)}px, ${(c.X.y - c.P.y * c.k - (p.scrollY || 0)).toFixed(2)}px) scale(${c.k.toFixed(4)})`;
     if (p.host.style.transform !== tf) p.host.style.transform = tf;
   };
   const camTo = (p, name, dur, ease) => {
-    const pose = p.cfg.cam && p.cfg.cam[name]; if (!pose) return;
+    /* 제출용 PDF(scripts/deck-pdf.py 가 window.__deckPdf 를 켬)에서는 pdfCam 에 적은 다른 장면으로 찍습니다. */
+    const key = (window.__deckPdf && p.cfg.pdfCam && p.cfg.pdfCam[name]) || name;
+    const pose = p.cfg.cam && p.cfg.cam[key]; if (!pose) return;
+    p.scrollY = 0;
     const now = performance.now(); const from = p.cam ? camState(p, now) : null;
     p.cam = { from, to: pose, t0: now, dur: from ? dur || 0 : 0, ease: CAM_EASE[ease || 'fly'] };
     camApply(p);
@@ -4006,8 +4112,22 @@ window.deck = new Deck();
     for (let i = 0; i < m; i++) st.cfg.steps[i].do.forEach((act) => run(st, act, true));
     Object.values(st.parts).forEach((p) => { if (p.shown) update(p, true); p.quiet = false; });
   };
+  /* 단계에 scroll 이 있으면(디자인 선택) 휠이 장을 넘기지 않고 그 부품의 카메라를 위아래로 옮깁니다.
+     지면 본문에 data-deck-scroll 을 달아 덱의 휠 · 화살표 처리가 비켜 가게 하고, 단계를 떠나면 뗍니다. */
+  const scrollMark = (s, step) => { const b = s.querySelector('.body'); if (b) b.toggleAttribute('data-deck-scroll', !!(step && step.scroll && !window.__deckPdf)); };
+  document.addEventListener('wheel', (e) => {
+    const s = deck.slides[deck.i]; if (!isRx(s)) return;
+    const st = state.get(s); const step = st && st.cfg.steps[Number(s.dataset.step || 0) - 1]; if (!step || !step.scroll) return;
+    const p = st.parts[step.scroll.part]; const c = p && camState(p, performance.now()); const d = p && docOf(p); if (!c || !d) return;
+    const g = d.querySelector(step.scroll.sel); if (!g) return;
+    const bottom = c.X.y + (g.getBoundingClientRect().bottom - c.P.y) * c.k;
+    const max = Math.max(0, bottom - (p.el.clientHeight - 40));
+    p.scrollY = Math.max(0, Math.min(max, (p.scrollY || 0) + e.deltaY));
+    camApply(p);
+  }, { passive: true });
   const go = async (s, n, back) => {
     const st = await setup(s); const steps = st.cfg.steps; n = Math.max(1, Math.min(n, steps.length)); s.dataset.step = n; loop(s);
+    scrollMark(s, steps[n - 1]);
     clearAll(st);
     if (back) { settle(st, n); st.until = 0; return; }
     if (n === 1 && !st.fresh) reset(st);
@@ -4025,7 +4145,7 @@ window.deck = new Deck();
   deck.prev = () => { const s = deck.slides[deck.i]; if (isRx(s)) s._rxTok = 0; if (isRx(s) && step(s) > 1) return go(s, step(s) - 1, true); prev(); };
   /* 장을 떠나면 장 전환이 끝난 뒤 그 장의 재생기와 부품을 정리합니다. 다시 들어오면 새로 만듭니다. */
   const teardown = (s) => {
-    s._rxTok = 0; const st = state.get(s); if (!st) return;
+    s._rxTok = 0; scrollMark(s, null); const st = state.get(s); if (!st) return;
     st.dead = true;
     Object.values(st.parts).forEach((p) => { clearTimeout(p.timer); p.revealTimers.splice(0).forEach(clearTimeout); try { if (p.r) { p.r.pause(); if (p.r.destroy) p.r.destroy(); } } catch (e) {} p.r = null; p.host.innerHTML = ''; });
     const stage = s.querySelector('.rx-stage'); if (stage) stage.innerHTML = '';
@@ -4181,7 +4301,7 @@ window.deck = new Deck();
       },
       skip: ['.cov .c.on'],
     },
-    '벤치마킹 사례와 차별점>주요 기능': {
+    '벤치마킹 사례와 차별점>서비스 흐름': {
       pairs: [1, 2, 3, 4].map((g) => [`.cov .sh.g${g}`, `.fp-line .band.g${g} b`, 1]),
       a: ['.fp-line .band', '.fp-line .lane', '.fp-line svg.under', '.fp-line .st'],
       b: ['.fp-line .loop', '.fp-line .ad', '.concl'], at: [340, 800],
@@ -4383,6 +4503,49 @@ window.deck = new Deck();
   })();
 </script>
 
+<script>
+/* 포트폴리오 표현 방식 — 비교 지면을 보고 있는 동안에만 원본 사이트를 실행합니다(프로젝트 제안서와 같은 방식). */
+(() => {
+  const slide = document.querySelector('.fd-cmp');
+  const template = slide?.querySelector('[data-portfolio-template]');
+  if (!template) return;
+  const view = template.parentElement;
+  const state = view.querySelector('.cmp-load');
+  const status = state.querySelector('[data-portfolio-status]');
+  let frame, timer, activation;
+  function unload() {
+    clearTimeout(timer); clearTimeout(activation);
+    frame?.remove(); frame = null;
+    state.hidden = false; status.textContent = '포트폴리오 로딩 중';
+    view.setAttribute('aria-busy', 'false');
+  }
+  function load() {
+    unload();
+    if (!slide.classList.contains('active')) return;
+    view.setAttribute('aria-busy', 'true');
+    frame = template.content.firstElementChild.cloneNode(true);
+    frame.setAttribute('data-deck-editor', '');
+    const current = frame;
+    current.addEventListener('load', () => {
+      if (frame !== current) return;
+      clearTimeout(timer); state.hidden = true; view.setAttribute('aria-busy', 'false');
+    }, { once: true });
+    view.insertBefore(current, view.querySelector('.cmp-still'));
+    timer = setTimeout(() => {
+      status.textContent = '연결이 지연되고 있습니다. 다시 불러오거나 새 탭에서 열어 주세요.';
+      view.setAttribute('aria-busy', 'false');
+    }, 12000);
+  }
+  function sync() {
+    clearTimeout(activation);
+    if (!slide.classList.contains('active')) { unload(); return; }
+    if (!frame) activation = setTimeout(load, 950);
+  }
+  state.querySelector('[data-portfolio-retry]').addEventListener('click', load);
+  new MutationObserver(sync).observe(slide, { attributes: true, attributeFilter: ['class'] });
+  sync();
+})();
+</script>
 <script src="templates/deck-portal-navigation.js"></script><script src="templates/slideshow-ui.js"></script><script src="templates/portal-deck-export.js"></script>
 </body>
 </html>

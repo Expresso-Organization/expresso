@@ -94,6 +94,8 @@ def serve(directory: Path) -> tuple[QuietServer, int]:
 
 def open_deck(browser, url: str, scale: int):
     ctx = browser.new_context(viewport={"width": W, "height": H}, device_scale_factor=scale)
+    # 덱이 PDF 전용 장면(재생 장의 pdfCam 등)을 고르도록 알린다.
+    ctx.add_init_script("window.__deckPdf = true")
     page = ctx.new_page()
     page.set_default_timeout(60000)
     # 편집 도구의 저장 요청이 원본을 덮지 않도록 읽기 요청만 통과시킨다.
