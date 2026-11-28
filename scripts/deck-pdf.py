@@ -82,7 +82,66 @@ SHADOW_FIX = r"""
 }
 """
 
-HIDE_UI = ".deck-controls,.deck-progress,.overview,.de-bar,.de-undo,.deck-export-dialog{display:none!important}"
+# Chrome 은 repeating-linear-gradient 빗금을 작은 타일 패턴으로 넣는데, macOS 미리보기 · Safari(PDFKit)는
+# 타일 경계에서 빗금이 끊긴 세로줄을 그린다. 인쇄할 때만 빗금을 요소 크기의 이미지 한 장(3배 해상도)으로 그려 바꾼다.
+STRIPE_FIX = r"""
+() => {
+  const SCALE = 3;
+  const parse = (bg) => {
+    const m = bg.match(/^repeating-linear-gradient\((.*)\)$/);
+    if (!m) return null;
+    const parts = m[1].split(/,(?![^()]*\))/).map((s) => s.trim());
+    let angle = 180;
+    if (/deg$/.test(parts[0])) angle = parseFloat(parts.shift());
+    else if (/^to /.test(parts[0])) return null;
+    const stops = [];
+    for (const p of parts) {
+      const s = p.match(/^(rgba?\([^)]*\)|transparent)((?:\s+-?[\d.]+px)*)$/);
+      if (!s) return null;
+      const pos = s[2].trim().split(/\s+/).filter(Boolean).map(parseFloat);
+      if (!pos.length) return null;
+      pos.forEach((v) => stops.push({ c: s[1] === 'transparent' ? 'rgba(0,0,0,0)' : s[1], p: v }));
+    }
+    return { angle, stops };
+  };
+  document.querySelectorAll('*').forEach((el) => {
+    const cs = getComputedStyle(el);
+    if (!cs.backgroundImage.startsWith('repeating-linear-gradient')) return;
+    const g = parse(cs.backgroundImage);
+    const w = el.offsetWidth, h = el.offsetHeight;
+    if (!g || !w || !h) return;
+    const period = g.stops[g.stops.length - 1].p - g.stops[0].p;
+    if (period <= 0) return;
+    const cv = document.createElement('canvas');
+    cv.width = Math.ceil(w * SCALE); cv.height = Math.ceil(h * SCALE);
+    const ctx = cv.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+    const th = g.angle * Math.PI / 180;
+    const L = Math.abs(w * Math.sin(th)) + Math.abs(h * Math.cos(th));
+    const D = Math.hypot(w, h);
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(Math.atan2(-Math.cos(th), Math.sin(th)));
+    const start = -L / 2 + g.stops[0].p;
+    for (let k = Math.floor((-D - start) / period) - 1; start + k * period < D; k++) {
+      const base = start + k * period - g.stops[0].p;
+      for (let i = 0; i < g.stops.length - 1; i++) {
+        const a = g.stops[i], b = g.stops[i + 1];
+        if (b.p <= a.p) continue;
+        const x0 = base + a.p, x1 = base + b.p;
+        if (a.c === b.c) ctx.fillStyle = a.c;
+        else { const lg = ctx.createLinearGradient(x0, 0, x1, 0); lg.addColorStop(0, a.c); lg.addColorStop(1, b.c); ctx.fillStyle = lg; }
+        ctx.fillRect(x0, -D, x1 - x0 + 0.02, 2 * D);
+      }
+    }
+    el.style.setProperty('background-image', `url(${cv.toDataURL('image/png')})`, 'important');
+    el.style.setProperty('background-size', '100% 100%', 'important');
+    el.style.setProperty('background-repeat', 'no-repeat', 'important');
+    el.style.setProperty('background-origin', 'border-box', 'important');
+  });
+}
+"""
+
+HIDE_UI =".deck-controls,.deck-progress,.overview,.de-bar,.de-undo,.deck-export-dialog{display:none!important}"
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -130,6 +189,10 @@ def print_pages(browser, url: str) -> tuple[bytes, list[dict]]:
     page.emulate_media(media="print")
     page.evaluate(PRINT_FIX)
     page.evaluate(SHADOW_FIX)
+    page.evaluate(STRIPE_FIX)
+    left = page.evaluate("[...document.querySelectorAll('*')].filter((e) => getComputedStyle(e).backgroundImage.startsWith('repeating')).map((e) => e.className + ' :: ' + getComputedStyle(e).backgroundImage.slice(0, 120))")
+    if left:
+        print("빗금 그대로 남은 요소:", *left, sep="\n  ")
     page.wait_for_timeout(300)
     pdf = page.pdf(width=f"{W}px", height=f"{H}px", print_background=True, prefer_css_page_size=True)
     ctx.close()
