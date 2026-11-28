@@ -426,6 +426,13 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       const marked = (await service.history(user, portfolio)).find((page) => page.id === draft.id)!;
       expect(marked.refinement).toEqual({ status: "adopted", revisionId: latest.id });
       expect(marked.generationManifest!.visualReview).toEqual(review);
+      // 다듬은 판은 AI의 변경이고, 스타일까지 바꾼 판이라 한 건 되돌리기가 아니라 복원으로만 무릅니다.
+      expect(latest.change).toMatchObject({ actor: "ai", kind: "refined" });
+      await expect(service.revertRevision(user, portfolio, { revision: latest.revision, expectedRevision: latest.revision })).rejects.toMatchObject({ statusCode: 409 });
+      // 이 칸이 생기기 전의 다듬은 판도 초안이 가리키는 판이라 다듬기로 추정합니다.
+      await db.generatedPages.updateOne({ _id: latest.id }, { $unset: { change: "" } });
+      expect((await service.history(user, portfolio)).find((page) => page.id === latest.id)!.change).toMatchObject({ actor: "ai", kind: "refined" });
+      await expect(service.revertRevision(user, portfolio, { revision: latest.revision, expectedRevision: latest.revision })).rejects.toMatchObject({ statusCode: 409 });
       // 재전달이 와도 다시 다듬지 않습니다.
       await service.refine(user, draft.id, refiner);
       expect(inputs).toHaveLength(1);
@@ -506,6 +513,61 @@ describe.skipIf(!process.env.TEST_MONGODB_URL)(
       expect(writer.calls[0]!.contract).toBe("page_fill");
       expect(written.generationManifest!.structured!.content.sections.at(-1)).toMatchObject({ id: second.id, summary: "24분으로 줄인 배치" });
       await expect(service.addRecordSection(user, portfolio, { expectedRevision: added.revision, recordId: randomUUID() }, null)).rejects.toMatchObject({ statusCode: 409 });
+    });
+
+    it("판마다 누가 무엇을 고쳤는지 남기고, 변경 하나만 되돌린다", async () => {
+      const generation = new MongoGenerationService(fixture.resource);
+      const template = await mongoCollections(fixture.resource.db).templates.findOne({ isActive: true });
+      const job = await generation.submit(user, randomUUID(), { recipeId, templateId: template!._id });
+      const target = (await generation.prepareFreeHtml(job.generationJobId)).portfolioId!;
+      const first = await service.generate(user, target, generator);
+      expect(first.change).toMatchObject({ actor: "ai", kind: "generated", summary: "지면 생성" });
+
+      // 판 1: 사례 요약을 직접 고친다. 판 2: 첫 화면 소개 글을 고친다. 판 3: 에이전트가 사례 제목의 색을 고친다.
+      const summary = await service.editComposition(user, target, { expectedRevision: first.revision, patches: [{ path: "/sections/project-a/summary", value: "직접 고친 요약" }] });
+      expect(summary.change).toMatchObject({ actor: "user", kind: "edited" });
+      const intro = await service.editComposition(user, target, { expectedRevision: summary.revision, patches: [{ path: "/profile/intro", value: "새 소개" }] });
+      const agent = await service.editElementByAgent(user, target, "section-project-a", { style: [{ part: "title", color: "accent" }] }, { instruction: "제목 강조", rationale: "제목 색을 바꿨습니다." });
+      expect(agent.page.change).toMatchObject({ actor: "ai", kind: "element" });
+
+      const history = await service.history(user, target);
+      expect(history.map((page) => page.change?.kind)).toEqual(["element", "edited", "edited", "generated"]);
+      expect(history[2]!.change?.keys).toContain("section-project-a");
+      expect(history[1]!.change?.keys).toEqual(["intro"]);
+
+      // 판 1만 되돌리면 요약은 돌아가고, 그 뒤의 소개 글과 글자 모양은 남는다.
+      const reverted = await service.revertRevision(user, target, { revision: summary.revision, expectedRevision: agent.page.revision });
+      const content = reverted.generationManifest!.structured!.content;
+      expect(content.sections[0]!.summary).toBe("초기 요약");
+      expect(content.profile.intro).toBe("새 소개");
+      expect((reverted.generationManifest!.structured!.spec.elements["section-project-a"]!.props as { style?: unknown }).style).toEqual({ title: { color: "accent" } });
+      expect(reverted.change).toMatchObject({ actor: "user", kind: "reverted" });
+      expect(reverted.change?.summary.startsWith("되돌림: ")).toBe(true);
+
+      // 무를 것이 없으면 새 판을 쌓지 않는다. 다른 사람의 지면은 없다.
+      await expect(service.revertRevision(user, target, { revision: summary.revision, expectedRevision: reverted.revision })).rejects.toMatchObject({ statusCode: 409 });
+      await expect(service.revertRevision(other, target, { revision: intro.revision, expectedRevision: reverted.revision })).rejects.toMatchObject({ statusCode: 404 });
+
+      // 그 뒤에 같은 칸을 또 고쳤으면 묻고, 덮기로 하면 덮는다.
+      const again = await service.editComposition(user, target, { expectedRevision: reverted.revision, patches: [{ path: "/profile/intro", value: "다시 고친 소개" }] });
+      await expect(service.revertRevision(user, target, { revision: intro.revision, expectedRevision: again.revision })).rejects.toMatchObject({ statusCode: 409, details: { reason: "revert_conflict" } });
+      const forced = await service.revertRevision(user, target, { revision: intro.revision, expectedRevision: again.revision, force: true });
+      expect(forced.generationManifest!.structured!.content.profile.intro).toBe("가상 연구");
+      // 되돌린 것을 다시 무르면 처음 변경을 다시 적용한 것으로 부릅니다.
+      const reapplied = await service.revertRevision(user, target, { revision: reverted.revision, expectedRevision: forced.revision });
+      expect(reapplied.change?.summary.startsWith("다시 적용: ")).toBe(true);
+      expect(reapplied.generationManifest!.structured!.content.sections[0]!.summary).toBe("직접 고친 요약");
+
+      // 이 칸이 생기기 전의 판은 저장할 때 남긴 지시문으로 추정한다.
+      const db = mongoCollections(fixture.resource.db);
+      await db.generatedPages.updateOne({ portfolioId: target, revision: summary.revision }, { $unset: { change: "" } });
+      await db.generatedPages.updateOne({ portfolioId: target, revision: agent.page.revision }, { $unset: { change: "" } });
+      const legacy = await service.history(user, target);
+      const bySummary = legacy.find((page) => page.revision === summary.revision)!;
+      expect(bySummary.change).toMatchObject({ actor: "user", kind: "edited" });
+      expect(bySummary.change?.summary).toBe("경로 연구 · 요약 고침");
+      // 지시문만 남은 옛 판은 에이전트 고침인지 지시로 다시 만든 판인지 가릴 수 없어 복원으로만 무르는 판으로 둡니다.
+      expect(legacy.find((page) => page.revision === agent.page.revision)!.change).toMatchObject({ actor: "ai", kind: "generated", summary: "지시로 고침: “제목 강조”" });
     });
   },
 );

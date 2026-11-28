@@ -14,6 +14,7 @@ import {
   type PageLibrarySearch,
   type RegeneratePage,
   type RestorePageRevision,
+  type RevertPageRevision,
   type EditStructuredPage,
   type AddStructuredSection,
   PageEditorDesignSchema,
@@ -1318,6 +1319,14 @@ export const page = {
   restore: (accessToken: string, portfolioId: string, body: RestorePageRevision) =>
     request(
       `${API_PREFIX}/portfolios/${portfolioId}/page/restore`,
+      z.object({ data: GeneratedPageSchema }),
+      { method: "POST", accessToken, body },
+    ),
+
+  /** 판 하나의 변경만 무른 새 판을 쌓는다. 그 뒤에 같은 칸을 또 고쳤으면 409(`details.reason = "revert_conflict"`). */
+  revert: (accessToken: string, portfolioId: string, body: RevertPageRevision) =>
+    request(
+      `${API_PREFIX}/portfolios/${portfolioId}/page/revert`,
       z.object({ data: GeneratedPageSchema }),
       { method: "POST", accessToken, body },
     ),

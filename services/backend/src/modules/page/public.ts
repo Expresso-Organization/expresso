@@ -13,10 +13,13 @@
 
 export class PageServiceError extends Error {
   readonly statusCode: number;
-  constructor(statusCode: number, message: string) {
+  /** 화면이 오류의 종류를 가릴 때 읽는 값. 응답의 `error.details`로 나갑니다. */
+  readonly details: Record<string, unknown> | undefined;
+  constructor(statusCode: number, message: string, details?: Record<string, unknown>) {
     super(message);
     this.name = "PageServiceError";
     this.statusCode = statusCode;
+    this.details = details;
   }
 }
 

@@ -3,6 +3,7 @@ import {
   PortfolioIdParamsSchema,
   RegeneratePageSchema,
   RestorePageRevisionSchema,
+  RevertPageRevisionSchema,
   EditStructuredPageSchema,
   PageLibrarySearchSchema,
   AddStructuredSectionSchema,
@@ -104,6 +105,16 @@ export function registerPageRoutes(
     return reply.code(201).send({ data: page });
   });
 
+  app.post(`${path}/revert`, { preHandler: options.authenticateRequest }, async (request, reply) => {
+    const principal = requireAuth(request);
+    const { id: portfolioId } = PortfolioIdParamsSchema.parse(request.params);
+    const input = RevertPageRevisionSchema.safeParse(request.body);
+    if (!input.success) throw new HttpStatusError(400, "invalid page revision");
+    if (!options.service.revertRevision) throw new HttpStatusError(503, "변경 되돌리기를 사용할 수 없습니다.");
+    const page = await lift(() => options.service.revertRevision!(principal.user.id, portfolioId, input.data));
+    return reply.code(201).send({ data: page });
+  });
+
   /**
    * 만들어지는 동안.
    *
@@ -167,7 +178,7 @@ async function lift<T>(run: () => Promise<T>): Promise<T> {
     return await run();
   } catch (error) {
     // 지면 규칙 위반 · 판 충돌의 이유는 화면이 그대로 보여 준다. 서비스가 사용자에게 쓴 한국어 문장만 내보낸다.
-    if (error instanceof PageServiceError) throw new HttpStatusError(error.statusCode, error.message, undefined, /\p{Script=Hangul}/u.test(error.message) ? error.message : undefined);
+    if (error instanceof PageServiceError) throw new HttpStatusError(error.statusCode, error.message, error.details, /\p{Script=Hangul}/u.test(error.message) ? error.message : undefined);
     // 두 번 다 거절당한 것은 모델의 실패지 사용자의 실패가 아니다. 502가 맞다.
     if (error instanceof PageGenerationError) throw new HttpStatusError(502, error.message);
     throw error;

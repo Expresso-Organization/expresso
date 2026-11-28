@@ -26,6 +26,8 @@ export interface GeneratedPageDoc {
   designPrinciplesVersion: number;
   /** 구조화 초안의 다듬기 상태(`PageRefinementSchema`). */
   refinement?: Contracts.PageRefinement;
+  /** 이 판이 바꾼 것(`PageChangeSchema`의 actor · kind · summary). 이 칸이 생기기 전의 판에는 없다. */
+  change?: Omit<Contracts.PageChange, "keys">;
 }
 
 export interface LayoutSpecDoc {

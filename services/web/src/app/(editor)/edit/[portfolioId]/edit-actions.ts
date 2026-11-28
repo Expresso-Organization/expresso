@@ -204,6 +204,30 @@ export async function restorePageAction(
   }
 }
 
+/**
+ * 04c 구조화 지면의 「이 변경만 되돌리기」. 그 뒤에 같은 자리를 또 고쳤으면 서버가 되묻고(`conflict`), 사용자가 한 번 더 누르면
+ * `force`로 덮는다. 생성 · 다듬기 · 복원 판은 서버가 거절하고, 화면은 그 판에 되돌리기를 두지 않는다.
+ */
+export async function revertPageAction(
+  _previous: { error?: string; conflict?: number; revision?: number },
+  formData: FormData,
+): Promise<{ error?: string; conflict?: number; revision?: number }> {
+  const portfolioId = formData.get("portfolioId");
+  const revision = Number(formData.get("revision"));
+  const expectedRevision = Number(formData.get("expectedRevision"));
+  if (typeof portfolioId !== "string" || !Number.isInteger(revision) || !Number.isInteger(expectedRevision)) return {};
+  const session = await requireSession();
+  try {
+    const { data } = await page.revert(session.accessToken, portfolioId, { revision, expectedRevision, ...(formData.get("force") === "true" ? { force: true } : {}) });
+    revalidatePath(`/edit/${portfolioId}`);
+    return { revision: data.revision };
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 409 && error.details?.reason === "revert_conflict") return { conflict: revision };
+    if (error instanceof ApiError && (error.status === 409 || error.status === 422)) return { error: error.message };
+    return { error: "되돌리지 못했습니다. 다시 시도해 주세요." };
+  }
+}
+
 /** 04 「내 커리어에서 가져오기」가 고를 수 있는 기록. 본문이 빈 기록은 가져올 글이 없다. */
 export async function careerRecordOptionsAction(): Promise<{ id: string; title: string }[]> {
   const session = await requireSession();

@@ -18,6 +18,9 @@ import {
   PAGE_IMAGE_SRC_PREFIX,
   RestorePageRevisionSchema,
   type RestorePageRevision,
+  RevertPageRevisionSchema,
+  type RevertPageRevision,
+  PAGE_REVERTIBLE_CHANGE_KINDS,
   AddStructuredSectionSchema,
   type AddStructuredSection,
   type StructuredElementStyle,
@@ -53,6 +56,32 @@ import {
   type PageElementEditor,
 } from "./element-edit.js";
 import { elementTitle } from "@expresso/portfolio-renderer";
+import { changedElementKeys, describeChange, revertChange, sameValue } from "./structured-history.js";
+
+type StoredChange = NonNullable<GeneratedPageDoc["change"]>;
+
+/**
+ * `change` 칸이 생기기 전에 저장된 판의 변경을 추정합니다. 생성 작업이 있으면 생성, 다른 판이 다듬어 낸 판이면 다듬기, 저장 때
+ * 남긴 지시문의 모양으로 직접 편집 · 기록 추가 · 복원을 가립니다. 지시문이 남은 나머지는 에이전트 고침입니다.
+ */
+function legacyChange(row: GeneratedPageDoc, refinedIds: ReadonlySet<string>): StoredChange {
+  if (row.change) return row.change;
+  const instruction = row.instruction?.trim() ?? "";
+  if (row.generationJobId || row.revision === 0) return { actor: "ai", kind: "generated", summary: "지면 생성" };
+  if (refinedIds.has(row._id)) return { actor: "ai", kind: "refined", summary: "AI가 화면을 보고 다듬음" };
+  if (instruction === "구성·문장 직접 편집") return { actor: "user", kind: "edited", summary: "직접 편집" };
+  if (instruction.startsWith("기록 추가:")) return { actor: "user", kind: "record", summary: instruction.slice(0, 200) };
+  if (/^판 \d+로 되돌림$/.test(instruction)) return { actor: "user", kind: "restored", summary: instruction };
+  // 지시문만 남은 옛 판은 에이전트 고침인지 지시로 다시 만든 판인지 가릴 수 없다. 스냅샷만 무르면 다시 만든 판이 섞이므로
+  // 되돌리기 대상(element)으로 두지 않고 복원으로만 돌아가게 한다.
+  if (instruction) return { actor: "ai", kind: "generated", summary: `지시로 고침: “${[...instruction].slice(0, 60).join("")}”` };
+  return { actor: "ai", kind: "refined", summary: "AI가 화면을 보고 다듬음" };
+}
+
+/** 저장된 판의 지면 스냅샷. 계약으로 읽어, 옛 스키마로 저장된 판도 지금 판과 같은 모양(기본값 포함)으로 비교한다. */
+function structuredOf(row: GeneratedPageDoc): StructuredPortfolioSnapshot | undefined {
+  return toPage(row).generationManifest?.structured;
+}
 
 /** 저장한 초안을 다듬는 쪽입니다. 워커가 `StructuredPageGenerator`를 넘깁니다. */
 export interface PageRefiner {
@@ -67,6 +96,7 @@ function toPage(row: GeneratedPageDoc): GeneratedPage {
     generationManifest: Object.keys(row.generationManifest).length > 0 ? row.generationManifest : null,
     styleSpec: row.styleSpecSnapshot ?? null, createdAt: row.createdAt.toISOString(),
     ...(row.refinement ? { refinement: row.refinement } : {}),
+    ...(row.change ? { change: { ...row.change, keys: [] } } : {}),
   });
 }
 
@@ -74,7 +104,7 @@ function toPage(row: GeneratedPageDoc): GeneratedPage {
  * 바탕 판을 이어 새 판 문서를 만듭니다. 다듬는 중(pending) 표시는 옮기지 않습니다 — 새 판을 다듬을 작업은 예약되지 않으므로
  * 옮기면 화면의 「AI가 다듬는 중」이 끝나지 않습니다. 끝난 다듬기 상태는 그대로 옮깁니다.
  */
-function nextRevision(base: GeneratedPageDoc, changes: Partial<GeneratedPageDoc> & { revision?: number }): GeneratedPageDoc {
+function nextRevision(base: GeneratedPageDoc, changes: Partial<GeneratedPageDoc> & { revision?: number; change: StoredChange }): GeneratedPageDoc {
   const { refinement, ...rest } = base;
   return {
     ...rest,
@@ -110,8 +140,28 @@ export class PageService {
     const row = await mongoCollections(this.context.db).generatedPages.findOne({ userId, generationJobId });
     return row ? toPage(row) : null;
   }
+  /**
+   * 판 목록. 최신 판이 먼저입니다. 판마다 무엇을 바꿨는지(`change`)를 싣고, 바뀐 요소 키는 바로 앞 판과 비교해 계산합니다.
+   * `change`가 없는 옛 판은 목록 전체를 보고 추정합니다 — 다듬어 낸 판은 초안이 가리키는 판이라 한 판만 봐서는 알 수 없습니다.
+   */
   async history(userId: string, portfolioId: string): Promise<GeneratedPage[]> {
-    return (await mongoCollections(this.context.db).generatedPages.find({ userId, portfolioId }).sort({ revision: -1 }).toArray()).map(toPage);
+    const rows = await mongoCollections(this.context.db).generatedPages.find({ userId, portfolioId }).sort({ revision: -1 }).toArray();
+    const refinedIds = new Set(rows.flatMap((row) => (row.refinement?.status === "adopted" && row.refinement.revisionId ? [row.refinement.revisionId] : [])));
+    return rows.map((row, index) => {
+      const change = legacyChange(row, refinedIds);
+      const before = rows[index + 1] ? structuredOf(rows[index + 1]!) : undefined;
+      const after = structuredOf(row);
+      let keys: string[] = [];
+      let summary = change.summary;
+      if (before && after) {
+        try {
+          keys = changedElementKeys(before, after);
+          // 옛 직접 편집은 「직접 편집」만 남아 있습니다. 두 판을 비교해 무엇을 고쳤는지 부릅니다.
+          if (!row.change && change.kind === "edited") summary = describeChange(before, after);
+        } catch { keys = []; }
+      }
+      return GeneratedPageSchema.parse({ ...toPage(row), change: { ...change, summary, keys } });
+    });
   }
   async document(userId: string, portfolioId: string): Promise<string | null> {
     const db = mongoCollections(this.context.db);
@@ -224,6 +274,10 @@ export class PageService {
         designPrinciplesVersion: DESIGN_PRINCIPLES_VERSION, createdAt: now,
         // 구조화 초안은 저장과 함께 다듬기를 예약합니다. 사용자는 초안을 먼저 보고, 워커가 이어서 다듬습니다.
         ...(result.manifest.structured ? { refinement: { status: "pending" as const } } : {}),
+        change: {
+          actor: "ai", kind: "generated",
+          summary: options.instruction ? `지시로 다시 만듦: “${[...options.instruction.trim()].slice(0, 60).join("")}”` : "지면 생성",
+        },
       };
       await db.generatedPages.insertOne(created, transactionOptions);
       if (created.refinement) await addMongoOutboxEvent(tx, { userId, topic: "page.refine", payload: { userId, pageId: created._id }, idempotencyKey: `page-refine:${created._id}` });
@@ -327,6 +381,7 @@ export class PageService {
         qaReport: result.qaReport as unknown as JsonObject, generationManifest: result.manifest as unknown as JsonObject,
         portfolioPlanSnapshot: draft.portfolioPlanSnapshot ?? null, styleSpecSnapshot: draft.styleSpecSnapshot ?? null,
         designPrinciplesVersion: DESIGN_PRINCIPLES_VERSION, createdAt: new Date(),
+        change: { actor: "ai", kind: "refined", summary: "AI가 화면을 보고 다듬음" },
       };
       await collections.generatedPages.insertOne(created, options);
       await collections.generatedPages.updateOne(
@@ -350,7 +405,10 @@ export class PageService {
       const problems = Object.values(snapshot.spec.elements).flatMap((node) => styleProblems(node.type, (node.props as { style?: StructuredElementStyle }).style, design));
       if (problems.length) throw new Error(problems.join(" "));
     } catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "구성이 올바르지 않습니다."); }
-    return toPage(await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, { instruction: "구성·문장 직접 편집" }));
+    return toPage(await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, {
+      instruction: "구성·문장 직접 편집",
+      change: { actor: "user", kind: "edited", summary: describeChange(previous, snapshot) },
+    }));
   }
 
   /**
@@ -371,7 +429,10 @@ export class PageService {
     const { current, previous, design } = await this.#latestStructured(userId, portfolioId);
     const checked = checkElementEdit(previous, key, input, design);
     if (checked.issues.length || !("snapshot" in checked)) throw new PageElementIssues(checked.issues);
-    const row = await this.#commitStructured(userId, portfolioId, current.revision, checked.snapshot, { instruction: note.instruction.slice(0, 2_000), rationale: note.rationale.slice(0, 400) });
+    const row = await this.#commitStructured(userId, portfolioId, current.revision, checked.snapshot, {
+      instruction: note.instruction.slice(0, 2_000), rationale: note.rationale.slice(0, 400),
+      change: { actor: "ai", kind: "element", summary: describeChange(previous, checked.snapshot) },
+    });
     return { page: toPage(row), changes: checked.changes, label: elementTitle(previous, key).title };
   }
 
@@ -421,7 +482,10 @@ export class PageService {
     let snapshot;
     try { snapshot = validateStructuredPortfolio(spec, content); }
     catch (error) { throw new PageServiceError(422, error instanceof Error ? error.message : "지면에 더할 수 없습니다."); }
-    return toPage(await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, { instruction: `기록 추가: ${source.title}`, rationale: `「${source.title}」 기록을 사례로 더했습니다.` }));
+    return toPage(await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, {
+      instruction: `기록 추가: ${source.title}`, rationale: `「${source.title}」 기록을 사례로 더했습니다.`,
+      change: { actor: "user", kind: "record", summary: [...`기록 추가: ${source.title}`].slice(0, 200).join("") },
+    }));
   }
 
   /** 편집 화면이 고를 수 있는 이 포트폴리오 디자인의 글자 크기 단계 · 색 · 서체입니다. */
@@ -475,7 +539,7 @@ export class PageService {
   }
 
   /** 고친 스냅샷을 생성 때와 같은 디자인으로 다시 그려 새 판으로 쌓습니다. */
-  async #commitStructured(userId: string, portfolioId: string, expectedRevision: number, snapshot: StructuredPortfolioSnapshot, note: { instruction: string; rationale?: string }): Promise<GeneratedPageDoc> {
+  async #commitStructured(userId: string, portfolioId: string, expectedRevision: number, snapshot: StructuredPortfolioSnapshot, note: { instruction: string; rationale?: string; change: StoredChange }): Promise<GeneratedPageDoc> {
     const { current, owner } = await this.#structured(userId, portfolioId, expectedRevision);
     let rendered;
     try {
@@ -500,7 +564,7 @@ export class PageService {
       const created = nextRevision(latest, {
         html: rendered.html, css: rendered.css,
         styleSpecSnapshot: latest.styleSpecSnapshot ? { ...latest.styleSpecSnapshot, structure } : null,
-        instruction: note.instruction, ...(note.rationale ? { rationale: note.rationale } : {}),
+        instruction: note.instruction, ...(note.rationale ? { rationale: note.rationale } : {}), change: note.change,
         generationManifest: { ...latest.generationManifest, structured: snapshot, library: librarySelection(snapshot.spec) } as unknown as JsonObject,
       });
       await db.generatedPages.insertOne(created, options);
@@ -524,12 +588,52 @@ export class PageService {
       if (input.revision === latest.revision) throw new PageServiceError(409, "지금 보고 있는 판입니다.");
       const source = await db.generatedPages.findOne({ userId, portfolioId, revision: input.revision }, options);
       if (!source) throw new PageServiceError(404, "그 판이 없습니다.");
-      const created = nextRevision(source, { revision: latest.revision + 1, instruction: `판 ${input.revision + 1}로 되돌림`, rationale: `판 ${input.revision + 1}로 되돌렸습니다.` });
+      const created = nextRevision(source, {
+        revision: latest.revision + 1, instruction: `판 ${input.revision + 1}로 되돌림`, rationale: `판 ${input.revision + 1}로 되돌렸습니다.`,
+        change: { actor: "user", kind: "restored", summary: `판 ${input.revision + 1}로 복원` },
+      });
       await db.generatedPages.insertOne(created, options);
       await db.portfolios.updateOne({ _id: portfolioId, userId }, { $set: { updatedAt: new Date() } }, options);
       return created;
     });
     return toPage(row);
+  }
+
+  /**
+   * 판 하나의 변경만 무른다. 그 판이 바꾼 칸을 그 앞 판의 값으로 돌려 최신 판 위에 새 판으로 쌓는다. 그 뒤에 같은 칸을 또
+   * 고쳤으면 묻지 않고 덮지 않는다 — `force` 없이는 409로 되묻고, 사용자가 한 번 더 누르면 덮는다.
+   */
+  async revertRevision(userId: string, portfolioId: string, raw: RevertPageRevision): Promise<GeneratedPage> {
+    const input = RevertPageRevisionSchema.parse(raw);
+    const { previous: current } = await this.#structured(userId, portfolioId, input.expectedRevision);
+    if (input.revision > input.expectedRevision) throw new PageServiceError(404, "그 판이 없습니다.");
+    const db = mongoCollections(this.context.db);
+    const [target, prior] = await Promise.all([
+      db.generatedPages.findOne({ userId, portfolioId, revision: input.revision }),
+      db.generatedPages.findOne({ userId, portfolioId, revision: input.revision - 1 }),
+    ]);
+    if (!target || !prior) throw new PageServiceError(404, "그 판이 없습니다.");
+    // 옛 판이 다듬어 낸 판인지는 그 판을 가리키는 초안으로 가린다.
+    const draft = target.change ? null : await db.generatedPages.findOne({ userId, portfolioId, "refinement.revisionId": target._id });
+    const refinedIds = new Set(draft ? [target._id] : []);
+    const change = legacyChange(target, refinedIds);
+    if (!PAGE_REVERTIBLE_CHANGE_KINDS.has(change.kind)) throw new PageServiceError(409, "이 판은 「복원」으로 판 전체를 되돌려 주세요.");
+    const before = structuredOf(prior), changed = structuredOf(target);
+    if (!before || !changed) throw new PageServiceError(409, "구조화 지면의 변경만 하나씩 되돌릴 수 있습니다.");
+    const merged = revertChange(before, changed, current, input.force ?? false);
+    if (merged.conflicts.length && !input.force) {
+      throw new PageServiceError(409, "그 뒤에 이 자리를 또 고쳤습니다. 되돌리면 그 편집이 사라집니다.", { reason: "revert_conflict", paths: merged.conflicts.slice(0, 20) });
+    }
+    let snapshot: StructuredPortfolioSnapshot;
+    try { snapshot = validateStructuredPortfolio(merged.spec, merged.content); }
+    catch (error) { throw new PageServiceError(422, error instanceof Error && /\p{Script=Hangul}/u.test(error.message) ? error.message : "되돌린 지면이 올바르지 않습니다. 「복원」으로 판 전체를 되돌려 주세요."); }
+    if (sameValue(snapshot.spec, current.spec) && sameValue(snapshot.content, current.content)) throw new PageServiceError(409, "되돌릴 변경이 없습니다.");
+    return toPage(await this.#commitStructured(userId, portfolioId, input.expectedRevision, snapshot, {
+      instruction: `판 ${input.revision + 1}의 변경 되돌림`,
+      rationale: `판 ${input.revision + 1}의 변경을 되돌렸습니다.`,
+      // 되돌린 것을 다시 무르면 처음 변경을 다시 적용한 것이다. 「되돌림: 되돌림: …」으로 쌓지 않는다.
+      change: { actor: "user", kind: "reverted", summary: [...(change.summary.startsWith("되돌림: ") ? `다시 적용: ${change.summary.slice(5)}` : `되돌림: ${change.summary}`)].slice(0, 200).join("") },
+    }));
   }
 }
 
