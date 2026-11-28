@@ -47,6 +47,11 @@ cp docs/templates/expresso-doc.html docs/<문서-이름>.html
 - **장이 바뀔 때 내용이 순서대로 올라옵니다.** 올라올 자리에 `class="in"` 을 달고 `dl-1` … `dl-9` 로 순서를 줍니다. 표시를 하나도 달지 않으면 지면끼리만 겹칩니다.
 - **글과 장은 브라우저에서 고칠 수 있습니다.** `E` 글 고치기 · `S` 장 목록(끌어서 순서 · `＋ ⧉ ×`) · `⌘S` 파일에 바로 저장. `docs/templates/deck-editor.js`가 하는 일이고, 양식을 복사하면 함께 따라옵니다.
 - **도구는 자료에 매여 있지 않습니다.** 다른 HTML 발표 자료에도 `<script>` 한 줄로 붙습니다. 고칠 일이 있으면 덱이 아니라 `deck-editor.js`를 고칩니다.
+- **제출용 PDF는 `scripts/deck-pdf.py`로 뽑습니다.** 보통 장은 글자가 살아 있는 인쇄 지면으로, 요소 추출 재생 장(`.slide.rx`)은 설명이 뜬 단계마다 2배 해상도 화면 한 쪽으로 넣고, 장 제목으로 책갈피를 답니다. 덱을 고친 뒤에는 다시 뽑습니다. 필요한 Playwright · pypdf · Pillow는 html-presentation 내보내기 환경에 들어 있습니다.
+
+  ```bash
+  ~/.local/share/html-presentation/export-venv/bin/python scripts/deck-pdf.py docs/최종-발표-개정.html docs/downloads/final-presentation.pdf
+  ```
 
 ### 차트와 다이어그램
 
